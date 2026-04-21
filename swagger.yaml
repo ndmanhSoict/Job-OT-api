@@ -1,0 +1,712 @@
+openapi: 3.0.0
+
+info:
+  title: LCMS-API – Hệ thống CSDL SHTT Bắc Ninh
+  version: 1.0.0
+  description: |
+    ## Mô tả
+    REST API cho hệ thống quản lý tài sản **Sở hữu Trí tuệ tỉnh Bắc Ninh**.
+
+    Quản lý 6 nhóm đối tượng SHTT:
+    - **copyright** – Bản quyền tác giả
+    - **gi** – Chỉ dẫn địa lý
+    - **trademark** – Nhãn hiệu
+    - **patent** – Sáng chế / Giải pháp hữu ích
+    - **design** – Kiểu dáng công nghiệp
+    - **craft** – Làng nghề (đặc thù Bắc Ninh)
+
+    ## Phân quyền
+    | Role | Mô tả |
+    |------|-------|
+    | Guest | Không cần đăng nhập – chỉ đọc (public endpoints) |
+    | Staff | Cần Bearer JWT – CRUD (không hard-delete) |
+    | Admin | Cần Bearer JWT – toàn quyền |
+
+    ## Error Format
+    ```json
+    {
+      "success": false,
+      "error": {
+        "code": "ASSET_NOT_FOUND",
+        "message": "Không tìm thấy đối tượng SHTT",
+        "details": {}
+      }
+    }
+    ```
+
+  contact:
+    name: LCMS Support
+    email: support@shtt.bacninh.gov.vn
+  license:
+    name: Internal Use Only
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Development
+  - url: https://api.shtt.bacninh.gov.vn/api/v1
+    description: Production
+
+tags:
+  - name: Auth
+    description: Xác thực và phân quyền
+  - name: IP Assets
+    description: Đối tượng SHTT (base CRUD)
+  - name: Search
+    description: Tìm kiếm toàn văn
+  - name: Dashboard
+    description: Thống kê và cảnh báo (Staff+)
+  - name: Users
+    description: Quản lý tài khoản (Admin only)
+  - name: Craft Villages
+    description: Làng nghề Bắc Ninh
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token (RS256, TTL 15 phút)
+
+  schemas:
+    # ─── Common ─────────────────────────────────────────────
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: ASSET_NOT_FOUND
+            message:
+              type: string
+              example: Không tìm thấy đối tượng SHTT
+            details:
+              type: object
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 150
+        totalPages:
+          type: integer
+          example: 8
+
+    # ─── Enums ──────────────────────────────────────────────
+    AssetType:
+      type: string
+      enum: [copyright, gi, trademark, patent, design, craft]
+      description: Loại đối tượng SHTT
+
+    AssetStatus:
+      type: string
+      enum: [pending, published, granted, refused, withdrawn, expired, lapsed]
+      description: Trạng thái hồ sơ
+
+    UserRole:
+      type: string
+      enum: [admin, staff]
+
+    # ─── IpAsset ────────────────────────────────────────────
+    IpAsset:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        asset_type:
+          $ref: '#/components/schemas/AssetType'
+        title:
+          type: string
+          example: Nhãn hiệu DALAT MILK
+        application_number:
+          type: string
+          example: 4-2024-12345
+        application_date:
+          type: string
+          format: date
+          example: '2024-01-15'
+        publication_number:
+          type: string
+          nullable: true
+        publication_date:
+          type: string
+          format: date
+          nullable: true
+        grant_number:
+          type: string
+          nullable: true
+        grant_date:
+          type: string
+          format: date
+          nullable: true
+        expiry_date:
+          type: string
+          format: date
+          nullable: true
+          description: Ngày hết hạn (tính tự động theo Luật SHTT VN)
+        status:
+          $ref: '#/components/schemas/AssetStatus'
+        applicant_name:
+          type: string
+          nullable: true
+        province_code:
+          type: string
+          default: BN
+        district_code:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateIpAssetRequest:
+      type: object
+      required: [asset_type, title]
+      properties:
+        asset_type:
+          $ref: '#/components/schemas/AssetType'
+        title:
+          type: string
+          maxLength: 500
+        application_number:
+          type: string
+          maxLength: 100
+        application_date:
+          type: string
+          format: date
+        grant_number:
+          type: string
+          maxLength: 100
+        grant_date:
+          type: string
+          format: date
+        expiry_date:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/AssetStatus'
+        applicant_name:
+          type: string
+          maxLength: 500
+        province_code:
+          type: string
+          maxLength: 10
+          default: BN
+        district_code:
+          type: string
+          maxLength: 10
+        internal_notes:
+          type: string
+
+    # ─── Auth ───────────────────────────────────────────────
+    LoginRequest:
+      type: object
+      required: [identifier, password]
+      properties:
+        identifier:
+          type: string
+          description: Username hoặc email
+          example: admin
+        password:
+          type: string
+          format: password
+          example: Admin@123456
+
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: JWT access token (TTL 15 phút)
+        refresh_token:
+          type: string
+          description: JWT refresh token (TTL 7 ngày)
+        expires_in:
+          type: integer
+          description: Số giây cho đến khi access token hết hạn
+          example: 900
+
+    # ─── User ───────────────────────────────────────────────
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/UserRole'
+        full_name:
+          type: string
+          nullable: true
+        is_active:
+          type: boolean
+        last_login_at:
+          type: string
+          format: date-time
+          nullable: true
+
+  parameters:
+    PageParam:
+      in: query
+      name: page
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    LimitParam:
+      in: query
+      name: limit
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    AssetTypeParam:
+      in: query
+      name: asset_type
+      schema:
+        $ref: '#/components/schemas/AssetType'
+    StatusParam:
+      in: query
+      name: status
+      schema:
+        $ref: '#/components/schemas/AssetStatus'
+    DistrictParam:
+      in: query
+      name: district_code
+      schema:
+        type: string
+        description: Mã huyện (vd BN-TP, BN-TT)
+    SearchParam:
+      in: query
+      name: q
+      schema:
+        type: string
+        description: Từ khóa tìm kiếm toàn văn
+    IdPath:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    Unauthorized:
+      description: Chưa đăng nhập hoặc token không hợp lệ
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Không có quyền thực hiện thao tác này
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Không tìm thấy
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ValidationError:
+      description: Dữ liệu đầu vào không hợp lệ
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+# ─── Paths ────────────────────────────────────────────────────────────────────
+paths:
+
+  /health:
+    get:
+      tags: [Auth]
+      summary: Health check
+      responses:
+        '200':
+          description: Server đang hoạt động bình thường
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Đăng nhập
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Đăng nhập thành công
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/TokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          description: Quá nhiều lần thử (rate limit)
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Làm mới access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: Token mới
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/TokenResponse'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Đăng xuất (thu hồi refresh token)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: Đăng xuất thành công
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Thông tin user hiện tại
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Thông tin user
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+
+  /ip-assets:
+    get:
+      tags: [IP Assets]
+      summary: Danh sách đối tượng SHTT (public)
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/AssetTypeParam'
+        - $ref: '#/components/parameters/StatusParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - $ref: '#/components/parameters/DistrictParam'
+        - in: query
+          name: application_date_from
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: application_date_to
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: sort_by
+          schema:
+            type: string
+            enum: [title, application_date, grant_date, expiry_date, created_at]
+        - in: query
+          name: sort_order
+          schema:
+            type: string
+            enum: [ASC, DESC]
+      responses:
+        '200':
+          description: Danh sách thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/IpAsset'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+    post:
+      tags: [IP Assets]
+      summary: Tạo mới đối tượng SHTT (Staff+)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIpAssetRequest'
+      responses:
+        '201':
+          description: Tạo thành công
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/IpAsset'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Số đơn đã tồn tại
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /ip-assets/{id}:
+    get:
+      tags: [IP Assets]
+      summary: Chi tiết đối tượng SHTT (public)
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Chi tiết bản ghi
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/IpAsset'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [IP Assets]
+      summary: Cập nhật đối tượng SHTT (Staff+)
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIpAssetRequest'
+      responses:
+        '200':
+          description: Cập nhật thành công
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [IP Assets]
+      summary: Xóa mềm đối tượng SHTT (Staff+)
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Xóa thành công
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /ip-assets/{id}/hard:
+    delete:
+      tags: [IP Assets]
+      summary: Xóa cứng đối tượng SHTT (Admin only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: Xóa cứng thành công
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /ip-assets/{id}/restore:
+    post:
+      tags: [IP Assets]
+      summary: Khôi phục bản ghi đã xóa mềm (Admin only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Khôi phục thành công
+
+  /search:
+    get:
+      tags: [Search]
+      summary: Tìm kiếm toàn văn (public)
+      parameters:
+        - $ref: '#/components/parameters/SearchParam'
+        - $ref: '#/components/parameters/AssetTypeParam'
+        - $ref: '#/components/parameters/StatusParam'
+        - $ref: '#/components/parameters/DistrictParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Kết quả tìm kiếm
+
+  /dashboard/stats:
+    get:
+      tags: [Dashboard]
+      summary: Thống kê tổng quan (Staff+)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Thống kê số lượng theo loại và trạng thái
+
+  /dashboard/expiring:
+    get:
+      tags: [Dashboard]
+      summary: Bản ghi sắp hết hạn trong N ngày (Staff+)
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: days
+          schema:
+            type: integer
+            default: 90
+          description: Số ngày tới để cảnh báo
+      responses:
+        '200':
+          description: Danh sách bản ghi sắp hết hạn
+
+  /users:
+    get:
+      tags: [Users]
+      summary: Danh sách tài khoản (Admin only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Danh sách tài khoản
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags: [Users]
+      summary: Tạo tài khoản staff (Admin only)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, email, password, role]
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+                role:
+                  $ref: '#/components/schemas/UserRole'
+                full_name:
+                  type: string
+      responses:
+        '201':
+          description: Tạo tài khoản thành công
+
+  /craft-villages:
+    get:
+      tags: [Craft Villages]
+      summary: Danh sách làng nghề Bắc Ninh (public)
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/DistrictParam'
+      responses:
+        '200':
+          description: Danh sách làng nghề
