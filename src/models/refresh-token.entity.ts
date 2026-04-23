@@ -1,41 +1,32 @@
-import { Entity, Column, CreateDateColumn, Index, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, JoinColumn, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import { User } from './user.entity';
 
 /**
- * Lưu refresh tokens – rotate mỗi lần dùng, revoke khi logout
+ * Bảng lưu refresh token (hash) – hỗ trợ token rotation & revoke.
+ * Không kế thừa BaseEntity vì không cần soft-delete và audit columns.
  */
 @Entity('refresh_tokens')
-@Index(['token'], { unique: true })
-@Index(['user_id'])
 export class RefreshToken {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 36 })
+  /** SHA-256 hash của refresh token thực; không lưu plaintext */
+  @Column({ type: 'varchar', length: 255, unique: true, comment: 'SHA-256 hash của refresh token' })
+  token_hash: string;
+
+  @Column({ type: 'char', length: 36, comment: 'FK → users.id' })
   user_id: string;
 
-  @Column({ type: 'varchar', length: 512, unique: true })
-  token: string;
+  @ManyToOne(() => User, (u) => u.refresh_tokens, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
   @Column({ type: 'datetime', comment: 'Thời điểm hết hạn' })
   expires_at: Date;
 
-  @Column({ type: 'boolean', default: false })
+  @Column({ type: 'tinyint', default: 0, comment: '1 = đã bị revoke' })
   is_revoked: boolean;
-
-  @Column({ type: 'varchar', length: 45, nullable: true })
-  ip_address?: string;
-
-  @Column({ type: 'text', nullable: true })
-  user_agent?: string;
 
   @CreateDateColumn({ type: 'datetime' })
   created_at: Date;
-
-  isExpired(): boolean {
-    return new Date() > this.expires_at;
-  }
-
-  isValid(): boolean {
-    return !this.is_revoked && !this.isExpired();
-  }
 }

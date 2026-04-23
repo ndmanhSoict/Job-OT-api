@@ -42,8 +42,7 @@ export const env = {
   },
 
   jwt: {
-    privateKey: Buffer.from(optional('JWT_PRIVATE_KEY', ''), 'base64').toString('utf-8') || '',
-    publicKey: Buffer.from(optional('JWT_PUBLIC_KEY', ''), 'base64').toString('utf-8') || '',
+    secret: required('JWT_SECRET'),
     accessExpires: optionalMs('JWT_ACCESS_EXPIRES', '15m'),
     refreshExpires: optionalMs('JWT_REFRESH_EXPIRES', '7d'),
   },

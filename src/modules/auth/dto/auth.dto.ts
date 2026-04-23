@@ -1,21 +1,41 @@
-// ─── src/modules/auth/dto/login.dto.ts ───────────────────────────────────────
-import { IsString, IsNotEmpty, MinLength, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
+// ---------------------------------------------------------------------------
+// 4.1 POST /auth/login
+// ---------------------------------------------------------------------------
 export class LoginDto {
+  /** Username hoặc email; không rỗng; max 255 ký tự */
   @IsString()
-  @IsNotEmpty({ message: 'Username/email không được để trống' })
-  @MaxLength(255)
-  identifier: string; // username hoặc email
+  @IsNotEmpty({ message: 'identifier không được để trống' })
+  @MaxLength(255, { message: 'identifier tối đa 255 ký tự' })
+  identifier: string;
 
+  /** Không rỗng; min 8 ký tự */
   @IsString()
-  @IsNotEmpty({ message: 'Mật khẩu không được để trống' })
-  @MinLength(6)
-  @MaxLength(100)
+  @IsNotEmpty({ message: 'password không được để trống' })
+  @MinLength(8, { message: 'password tối thiểu 8 ký tự' })
   password: string;
 }
 
+// ---------------------------------------------------------------------------
+// 4.2 POST /auth/refresh
+// ---------------------------------------------------------------------------
 export class RefreshTokenDto {
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'refresh_token không được để trống' })
+  refresh_token: string;
+}
+
+// ---------------------------------------------------------------------------
+// 4.3 POST /auth/logout
+// ---------------------------------------------------------------------------
+export class LogoutDto {
+  @IsString()
+  @IsNotEmpty({ message: 'refresh_token không được để trống' })
   refresh_token: string;
 }

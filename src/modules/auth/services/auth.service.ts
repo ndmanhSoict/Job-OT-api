@@ -1,71 +1,130 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid';
-import { AppDataSource } from '@infrastructure/database';
-import { User } from '@models/user.entity';
-import { RefreshToken } from '@models/refresh-token.entity';
-import { env } from '@config/env.config';
-import { AppError } from '@shared/helpers/app-error';
-import { ErrorCode } from '@shared/constants/error-codes';
-import { AuditAction } from '@shared/constants/enums';
-import { writeAuditLog } from '@middleware/audit-log.middleware';
-import { logger } from '@infrastructure/logger/logger';
+import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
+import * as jwt from 'jsonwebtoken';
+import { AppError } from '../../../shared/helpers/app-error';
+import { ErrorCode } from '../../../shared/constants/error-codes';
+import { AuditAction } from '../../../shared/constants/enums';
+import { writeAuditLog } from '../../../middleware/audit-log.middleware';
+import { logger } from '../../../infrastructure/logger/logger';
+import { AuthRepository } from '../repositories/auth.repository';
+import { User } from '../../../models/user.entity';
+import { env } from '../../../config/env.config';
 
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
 const MAX_FAILED_ATTEMPTS = 5;
-const LOCK_DURATION_MS = 15 * 60 * 1000; // 15 phút
+const LOCK_DURATION_MINUTES = 15;
+const ACCESS_TOKEN_TTL = 900;           // 15 phút (giây)
+const REFRESH_TOKEN_TTL_DAYS = 7;
 
+// ---------------------------------------------------------------------------
+// Interfaces
+// ---------------------------------------------------------------------------
 export interface TokenPair {
   access_token: string;
   refresh_token: string;
-  expires_in: number; // seconds
+  expires_in: number;
 }
 
+export interface MeResponse {
+  id: string;
+  username: string;
+  email: string;
+  full_name: string;
+  role: string;
+  is_active: boolean;
+  last_login_at: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Helper – hash SHA-256 của raw refresh token (không lưu plaintext vào DB)
+// ---------------------------------------------------------------------------
+function hashToken(rawToken: string): string {
+  return crypto.createHash('sha256').update(rawToken).digest('hex');
+}
+
+// ---------------------------------------------------------------------------
+// Helper – sign JWT (RS256)
+// ---------------------------------------------------------------------------
+// Helper – sign JWT (HS256 là mặc định)
+function signAccessToken(user: User): string {
+  return jwt.sign(
+    {
+      sub: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+    },
+    env.jwt.secret, // Thay thế env.jwt.privateKey
+    {
+      expiresIn: ACCESS_TOKEN_TTL,
+      // Đã xóa algorithm: 'RS256'
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Helper – tạo opaque refresh token (UUID-like random string)
+// ---------------------------------------------------------------------------
+function generateRefreshToken(): string {
+  return crypto.randomBytes(48).toString('hex'); // 96 ký tự hex
+}
+
+// ---------------------------------------------------------------------------
+// Service
+// ---------------------------------------------------------------------------
 export class AuthService {
-  private userRepo = AppDataSource.getRepository(User);
-  private refreshRepo = AppDataSource.getRepository(RefreshToken);
+  private repo = new AuthRepository();
 
-  /**
-   * Đăng nhập bằng username/email + password
-   * - Kiểm tra tài khoản tồn tại, active, không bị khóa
-   * - Verify password (bcrypt)
-   * - Tạo JWT access + refresh token
-   * - Ghi audit log
-   */
-  async login(identifier: string, password: string, ipAddress?: string, userAgent?: string): Promise<TokenPair> {
-    // Tìm user theo username hoặc email
-    const user = await this.userRepo
-      .createQueryBuilder('u')
-      .addSelect('u.password_hash')
-      .where('u.username = :id OR u.email = :id', { id: identifier })
-      .getOne();
-
+  // =========================================================================
+  // 4.1 Login
+  // =========================================================================
+  async login(
+    identifier: string,
+    password: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<TokenPair> {
+    // 1. Tìm user
+    const user = await this.repo.findByIdentifier(identifier);
     if (!user) {
-      throw new AppError(ErrorCode.AUTH_INVALID_CREDENTIALS, 401, 'Thông tin đăng nhập không chính xác');
+      throw new AppError(ErrorCode.AUTH_INVALID_CREDENTIALS, 401, 'Thông tin đăng nhập không hợp lệ');
     }
 
+    // 2. Kiểm tra tài khoản inactive
     if (!user.is_active) {
       throw new AppError(ErrorCode.AUTH_ACCOUNT_INACTIVE, 401, 'Tài khoản đã bị vô hiệu hóa');
     }
 
-    if (user.isLocked()) {
-      throw new AppError(ErrorCode.AUTH_ACCOUNT_LOCKED, 401, 'Tài khoản đang bị khóa tạm thời, vui lòng thử lại sau');
+    // 3. Kiểm tra tài khoản đang bị khóa
+    if (user.locked_until && user.locked_until > new Date()) {
+      logger.warn('Login blocked – account locked', {
+        context: 'AuthService',
+        userId: user.id,
+        locked_until: user.locked_until,
+      });
+      throw new AppError(ErrorCode.AUTH_ACCOUNT_LOCKED, 401, 'Tài khoản tạm thời bị khóa do đăng nhập sai quá nhiều lần');
     }
 
+    // 4. Kiểm tra password
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
     if (!isPasswordValid) {
       await this.handleFailedLogin(user);
-      throw new AppError(ErrorCode.AUTH_INVALID_CREDENTIALS, 401, 'Thông tin đăng nhập không chính xác');
+      throw new AppError(ErrorCode.AUTH_INVALID_CREDENTIALS, 401, 'Thông tin đăng nhập không hợp lệ');
     }
 
-    // Reset failed count
-    await this.userRepo.update(user.id, {
+    // 5. Đăng nhập thành công → reset failed count, cập nhật last_login_at
+    await this.repo.updateLoginMeta(user.id, {
       failed_login_count: 0,
       locked_until: undefined,
       last_login_at: new Date(),
     });
 
-    const tokenPair = await this.generateTokenPair(user, ipAddress, userAgent);
+    // 6. Cấp token pair
+    const tokenPair = await this.issueTokenPair(user);
 
+    // 7. Audit log
     await writeAuditLog({
       userId: user.id,
       action: AuditAction.LOGIN,
@@ -76,110 +135,128 @@ export class AuthService {
     });
 
     logger.info('User logged in', { context: 'AuthService', userId: user.id, ip: ipAddress });
+
     return tokenPair;
   }
 
-  /**
-   * Refresh access token bằng refresh token hợp lệ
-   * - Verify refresh token signature
-   * - Kiểm tra DB: not revoked, not expired
-   * - Rotate: revoke cũ, tạo mới
-   */
-  async refreshTokens(oldRefreshToken: string, ipAddress?: string, userAgent?: string): Promise<TokenPair> {
-    // Verify JWT signature trước
-    let payload: { sub: string } & Record<string, unknown>;
-    try {
-      payload = jwt.verify(oldRefreshToken, env.jwt.publicKey, { algorithms: ['RS256'] }) as typeof payload;
-    } catch {
-      throw new AppError(ErrorCode.AUTH_REFRESH_TOKEN_INVALID, 401, 'Refresh token không hợp lệ');
+  // =========================================================================
+  // 4.2 Refresh token
+  // =========================================================================
+  async refresh(rawRefreshToken: string): Promise<TokenPair> {
+    const tokenHash = hashToken(rawRefreshToken);
+    const record = await this.repo.findValidRefreshToken(tokenHash);
+
+    if (!record) {
+      throw new AppError(ErrorCode.AUTH_REFRESH_TOKEN_INVALID, 401, 'Refresh token không hợp lệ hoặc đã hết hạn');
     }
 
-    // Kiểm tra DB
-    const tokenRecord = await this.refreshRepo.findOne({ where: { token: oldRefreshToken } });
-    if (!tokenRecord || !tokenRecord.isValid()) {
-      throw new AppError(ErrorCode.AUTH_REFRESH_TOKEN_INVALID, 401, 'Refresh token đã hết hạn hoặc bị thu hồi');
+    const user = record.user;
+
+    // Kiểm tra user vẫn active
+    if (!user.is_active) {
+      await this.repo.revokeToken(tokenHash);
+      throw new AppError(ErrorCode.AUTH_ACCOUNT_INACTIVE, 401, 'Tài khoản đã bị vô hiệu hóa');
     }
 
-    const user = await this.userRepo.findOne({ where: { id: payload.sub } });
-    if (!user || !user.is_active) {
-      throw new AppError(ErrorCode.AUTH_ACCOUNT_INACTIVE, 401, 'Tài khoản không hợp lệ');
-    }
+    // Token rotation: revoke token cũ
+    await this.repo.revokeToken(tokenHash);
 
-    // Revoke token cũ
-    await this.refreshRepo.update(tokenRecord.id, { is_revoked: true });
+    // Cấp pair mới
+    const tokenPair = await this.issueTokenPair(user);
 
-    return this.generateTokenPair(user, ipAddress, userAgent);
+    logger.info('Token refreshed', { context: 'AuthService', userId: user.id });
+
+    return tokenPair;
   }
 
-  /**
-   * Logout – revoke refresh token
-   */
-  async logout(refreshToken: string, userId: string, ipAddress?: string): Promise<void> {
-    await this.refreshRepo.update({ token: refreshToken }, { is_revoked: true });
+  // =========================================================================
+  // 4.3 Logout
+  // =========================================================================
+  async logout(
+    userId: string,
+    rawRefreshToken: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<void> {
+    const tokenHash = hashToken(rawRefreshToken);
+    await this.repo.revokeToken(tokenHash);
+
     await writeAuditLog({
       userId,
       action: AuditAction.LOGOUT,
       entityType: 'users',
       entityId: userId,
       ipAddress,
+      userAgent,
     });
+
+    logger.info('User logged out', { context: 'AuthService', userId, ip: ipAddress });
   }
 
-  // ─── Private helpers ────────────────────────────────────────────────────────
-
-  private async generateTokenPair(user: User, ipAddress?: string, userAgent?: string): Promise<TokenPair> {
-    const payload = {
-      sub: user.id,
+  // =========================================================================
+  // 4.4 Me
+  // =========================================================================
+  async me(userId: string): Promise<MeResponse> {
+    const user = await this.repo.findUserById(userId);
+    if (!user) {
+      throw new AppError(ErrorCode.USER_NOT_FOUND, 404, 'Không tìm thấy người dùng');
+    }
+    return {
+      id: user.id,
       username: user.username,
       email: user.email,
+      full_name: user.full_name,
       role: user.role,
+      is_active: user.is_active,
+      last_login_at: user.last_login_at ? user.last_login_at.toISOString() : null,
     };
-
-    const signOptions: jwt.SignOptions = {
-      algorithm: 'RS256',
-      expiresIn: env.jwt.accessExpires,
-    };
-    const access_token = jwt.sign(payload, env.jwt.privateKey, signOptions);
-
-    const refreshPayload = { sub: user.id, jti: uuidv4() };
-    const refreshSignOptions: jwt.SignOptions = {
-      algorithm: 'RS256',
-      expiresIn: env.jwt.refreshExpires,
-    };
-    const refresh_token = jwt.sign(refreshPayload, env.jwt.privateKey, refreshSignOptions);
-
-    // Parse expiry (7d → ms)
-    const refreshMs = this.parseExpiry(env.jwt.refreshExpires);
-    const refreshRecord = this.refreshRepo.create({
-      user_id: user.id,
-      token: refresh_token,
-      expires_at: new Date(Date.now() + refreshMs),
-      ip_address: ipAddress,
-      user_agent: userAgent,
-    });
-    await this.refreshRepo.save(refreshRecord);
-
-    return { access_token, refresh_token, expires_in: 900 }; // 15min in seconds
   }
 
+  // =========================================================================
+  // Private helpers
+  // =========================================================================
+
+  /** Xử lý đăng nhập sai: tăng failed_count, khóa nếu đạt ngưỡng */
   private async handleFailedLogin(user: User): Promise<void> {
-    const newCount = user.failed_login_count + 1;
-    const update: Partial<User> = { failed_login_count: newCount };
+    const newCount = (user.failed_login_count ?? 0) + 1;
+    const update: Partial<Pick<User, 'failed_login_count' | 'locked_until'>> = {
+      failed_login_count: newCount,
+    };
 
     if (newCount >= MAX_FAILED_ATTEMPTS) {
-      update.locked_until = new Date(Date.now() + LOCK_DURATION_MS);
-      logger.warn('Account locked after failed attempts', { context: 'AuthService', userId: user.id });
+      const lockedUntil = new Date();
+      lockedUntil.setMinutes(lockedUntil.getMinutes() + LOCK_DURATION_MINUTES);
+      update.locked_until = lockedUntil;
+      logger.warn('Account locked after too many failed attempts', {
+        context: 'AuthService',
+        userId: user.id,
+        attempts: newCount,
+      });
     }
 
-    await this.userRepo.update(user.id, update);
+    await this.repo.updateLoginMeta(user.id, update);
   }
 
-  private parseExpiry(expiry: string): number {
-    const match = expiry.match(/^(\d+)([smhd])$/);
-    if (!match) return 7 * 24 * 60 * 60 * 1000;
-    const [, num, unit] = match;
-    const n = parseInt(num, 10);
-    const units: Record<string, number> = { s: 1000, m: 60000, h: 3600000, d: 86400000 };
-    return n * units[unit];
+  /** Tạo access token + refresh token và lưu hash vào DB */
+  private async issueTokenPair(user: User): Promise<TokenPair> {
+    const accessToken = signAccessToken(user);
+
+    const rawRefresh = generateRefreshToken();
+    const refreshHash = hashToken(rawRefresh);
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + REFRESH_TOKEN_TTL_DAYS);
+
+    await this.repo.saveRefreshToken({
+      user_id: user.id,
+      token_hash: refreshHash,
+      expires_at: expiresAt,
+    });
+
+    return {
+      access_token: accessToken,
+      refresh_token: rawRefresh,
+      expires_in: ACCESS_TOKEN_TTL,
+    };
   }
 }
