@@ -1,10 +1,10 @@
+import { authRouter } from '@/modules/auth/routes/auth.routes';
+import { ipAssetRouter } from '@/modules/ip-assets/routes/ip-asset.routes';
 import { Router } from 'express';
 
 export const v1Router = Router();
 
-/**
- * Health check – không cần auth, không rate limit
- */
+// Health check
 v1Router.get('/health', (_req, res) => {
   res.json({
     success: true,
@@ -17,3 +17,5 @@ v1Router.get('/health', (_req, res) => {
 });
 
 // ─── Feature routes ─────────────────────────────────────────────────────────
+v1Router.use('/auth', authRouter);
+v1Router.use('/ip-assets', ipAssetRouter);
