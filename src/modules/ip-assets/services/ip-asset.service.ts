@@ -7,6 +7,7 @@ import { ErrorCode } from '@shared/constants/error-codes';
 import { AuditAction } from '@shared/constants/enums';
 import { buildPaginationMeta } from '@shared/helpers/pagination.helper';
 import { writeAuditLog } from '@middleware/audit-log.middleware';
+import { createSimplePdf } from '@shared/helpers/pdf.helper';
 
 function toDate(value?: string): Date | undefined {
   return value ? new Date(value) : undefined;
@@ -205,5 +206,24 @@ export class IpAssetService {
       entityId: id,
       ipAddress,
     });
+  }
+
+  async exportPdf(id: string): Promise<{ fileName: string; buffer: Buffer }> {
+    const asset = await this.getById(id);
+
+    return {
+      fileName: `shtt_${asset.asset_type}_${asset.id}.pdf`,
+      buffer: createSimplePdf([
+        `SO HUU TRI TUE - ${asset.asset_type.toUpperCase()}`,
+        `ID: ${asset.id}`,
+        `Title: ${asset.title}`,
+        `Applicant: ${asset.applicant_name ?? 'N/A'}`,
+        `Application number: ${asset.application_number ?? 'N/A'}`,
+        `Grant number: ${asset.grant_number ?? 'N/A'}`,
+        `Status: ${asset.status}`,
+        `Application date: ${asset.application_date?.toISOString().slice(0, 10) ?? 'N/A'}`,
+        `Grant date: ${asset.grant_date?.toISOString().slice(0, 10) ?? 'N/A'}`,
+      ]),
+    };
   }
 }

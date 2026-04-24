@@ -39,3 +39,18 @@ export class LogoutDto {
   @IsNotEmpty({ message: 'refresh_token không được để trống' })
   refresh_token: string;
 }
+
+// ---------------------------------------------------------------------------
+// POST /auth/change-password
+// ---------------------------------------------------------------------------
+export class ChangePasswordDto {
+  @IsString()
+  @IsNotEmpty({ message: 'current_password không được để trống' })
+  current_password: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'new_password không được để trống' })
+  @MinLength(8, { message: 'new_password tối thiểu 8 ký tự' })
+  @MaxLength(255)
+  new_password: string;
+}

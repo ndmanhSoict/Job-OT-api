@@ -101,4 +101,16 @@ export const IpAssetController = {
       next(err);
     }
   },
+
+  async exportPdf(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      validateUUID(req.params.id);
+      const result = await service.exportPdf(req.params.id);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+      res.status(200).send(result.buffer);
+    } catch (err) {
+      next(err);
+    }
+  },
 };

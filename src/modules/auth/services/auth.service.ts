@@ -213,6 +213,27 @@ export class AuthService {
   }
 
   // =========================================================================
+  // change-password
+  // =========================================================================
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+    const user = await this.repo.findUserById(userId);
+    if (!user) {
+      throw new AppError(ErrorCode.USER_NOT_FOUND, 404, 'Không tìm thấy người dùng');
+    }
+
+    const valid = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!valid) {
+      throw new AppError(ErrorCode.AUTH_INVALID_CREDENTIALS, 401, 'Mật khẩu hiện tại không đúng');
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 12);
+    await this.repo.updatePasswordHash(userId, newHash);
+    await this.repo.revokeAllUserTokens(userId);
+
+    logger.info('Password changed', { context: 'AuthService', userId });
+  }
+
+  // =========================================================================
   // Private helpers
   // =========================================================================
 

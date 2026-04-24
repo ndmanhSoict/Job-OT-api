@@ -1,15 +1,38 @@
 {
   "info": {
-    "name": "LCMS-API – IP Assets (Section 5)",
-    "description": "Test collection for Section 5: IP ASSETS – Đối tượng SHTT (Base CRUD)\n\nEndpoints:\n- GET  /api/v1/ip-assets         (public)\n- GET  /api/v1/ip-assets/:id     (public)\n- POST /api/v1/ip-assets         (Staff+)\n- PATCH /api/v1/ip-assets/:id    (Staff+)\n- DELETE /api/v1/ip-assets/:id   (soft-delete, Staff+)\n- DELETE /api/v1/ip-assets/:id/hard (Admin)\n- POST /api/v1/ip-assets/:id/restore (Admin)",
+    "name": "LCMS-API – IP Assets, Upload & Import Export (Section 5, 11, 12)",
+    "description": "Test collection for Section 5, 11, 12:\n- Section 5: IP ASSETS – Base CRUD\n- Section 11: UPLOAD – images/documents and delete attachment endpoints\n- Section 12: EXPORT / IMPORT – template, import xlsx, export excel/csv, export pdf\n\nChạy theo thứ tự folder để các biến collection được set tự động.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "base_url", "value": "http://localhost:3000/api/v1" },
-    { "key": "staff_token", "value": "REPLACE_WITH_STAFF_JWT" },
-    { "key": "admin_token", "value": "REPLACE_WITH_ADMIN_JWT" },
-    { "key": "created_asset_id", "value": "" },
-    { "key": "soft_deleted_asset_id", "value": "" }
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api/v1"
+    },
+    {
+      "key": "staff_token",
+      "value": "REPLACE_WITH_STAFF_JWT"
+    },
+    {
+      "key": "admin_token",
+      "value": "REPLACE_WITH_ADMIN_JWT"
+    },
+    {
+      "key": "created_asset_id",
+      "value": ""
+    },
+    {
+      "key": "soft_deleted_asset_id",
+      "value": ""
+    },
+    {
+      "key": "uploaded_image_id",
+      "value": ""
+    },
+    {
+      "key": "uploaded_document_id",
+      "value": ""
+    }
   ],
   "item": [
     {
@@ -50,11 +73,21 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/ip-assets?page=1&limit=10",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets"
+              ],
               "query": [
-                { "key": "page", "value": "1" },
-                { "key": "limit", "value": "10" }
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
               ]
             }
           }
@@ -82,12 +115,25 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/ip-assets?asset_type=trademark&page=1&limit=20",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets"
+              ],
               "query": [
-                { "key": "asset_type", "value": "trademark" },
-                { "key": "page", "value": "1" },
-                { "key": "limit", "value": "20" }
+                {
+                  "key": "asset_type",
+                  "value": "trademark"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
               ]
             }
           }
@@ -110,10 +156,17 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/ip-assets?status=granted",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets"
+              ],
               "query": [
-                { "key": "status", "value": "granted" }
+                {
+                  "key": "status",
+                  "value": "granted"
+                }
               ]
             }
           }
@@ -136,12 +189,25 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/ip-assets?q=nhãn hiệu&page=1&limit=10",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets"
+              ],
               "query": [
-                { "key": "q", "value": "nhãn hiệu" },
-                { "key": "page", "value": "1" },
-                { "key": "limit", "value": "10" }
+                {
+                  "key": "q",
+                  "value": "nhãn hiệu"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
               ]
             }
           }
@@ -165,10 +231,17 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/ip-assets?sort_order=INVALID",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets"
+              ],
               "query": [
-                { "key": "sort_order", "value": "INVALID" }
+                {
+                  "key": "sort_order",
+                  "value": "INVALID"
+                }
               ]
             }
           }
@@ -202,8 +275,13 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/ip-assets/{{created_asset_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets", "{{created_asset_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "{{created_asset_id}}"
+              ]
             }
           }
         },
@@ -229,8 +307,13 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/ip-assets/not-a-uuid",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets", "not-a-uuid"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "not-a-uuid"
+              ]
             }
           }
         },
@@ -256,8 +339,13 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/ip-assets/00000000-0000-0000-0000-000000000000",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets", "00000000-0000-0000-0000-000000000000"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "00000000-0000-0000-0000-000000000000"
+              ]
             }
           }
         }
@@ -295,8 +383,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -304,8 +398,12 @@
             },
             "url": {
               "raw": "{{base_url}}/ip-assets",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets"
+              ]
             }
           }
         },
@@ -324,7 +422,10 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -332,8 +433,12 @@
             },
             "url": {
               "raw": "{{base_url}}/ip-assets",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets"
+              ]
             }
           }
         },
@@ -357,8 +462,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -366,8 +477,12 @@
             },
             "url": {
               "raw": "{{base_url}}/ip-assets",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets"
+              ]
             }
           }
         },
@@ -391,8 +506,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -400,8 +521,12 @@
             },
             "url": {
               "raw": "{{base_url}}/ip-assets",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets"
+              ]
             }
           }
         },
@@ -425,8 +550,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -434,8 +565,12 @@
             },
             "url": {
               "raw": "{{base_url}}/ip-assets",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets"
+              ]
             }
           }
         },
@@ -458,8 +593,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -467,8 +608,12 @@
             },
             "url": {
               "raw": "{{base_url}}/ip-assets",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets"
+              ]
             }
           }
         },
@@ -491,8 +636,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -500,8 +651,12 @@
             },
             "url": {
               "raw": "{{base_url}}/ip-assets",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets"
+              ]
             }
           }
         },
@@ -524,12 +679,20 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/ip-assets/{{created_asset_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets", "{{created_asset_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "{{created_asset_id}}"
+              ]
             }
           }
         },
@@ -557,8 +720,14 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -566,8 +735,13 @@
             },
             "url": {
               "raw": "{{base_url}}/ip-assets/{{created_asset_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets", "{{created_asset_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "{{created_asset_id}}"
+              ]
             }
           }
         },
@@ -589,8 +763,14 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -598,8 +778,13 @@
             },
             "url": {
               "raw": "{{base_url}}/ip-assets/00000000-0000-0000-0000-000000000000",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets", "00000000-0000-0000-0000-000000000000"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "00000000-0000-0000-0000-000000000000"
+              ]
             }
           }
         },
@@ -618,7 +803,10 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -626,8 +814,13 @@
             },
             "url": {
               "raw": "{{base_url}}/ip-assets/{{created_asset_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets", "{{created_asset_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "{{created_asset_id}}"
+              ]
             }
           }
         },
@@ -648,12 +841,20 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/ip-assets/{{created_asset_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets", "{{created_asset_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "{{created_asset_id}}"
+              ]
             }
           }
         },
@@ -674,8 +875,13 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/ip-assets/{{created_asset_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets", "{{created_asset_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "{{created_asset_id}}"
+              ]
             }
           }
         },
@@ -694,12 +900,20 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/ip-assets/{{soft_deleted_asset_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets", "{{soft_deleted_asset_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "{{soft_deleted_asset_id}}"
+              ]
             }
           }
         }
@@ -728,12 +942,21 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/ip-assets/{{soft_deleted_asset_id}}/restore",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets", "{{soft_deleted_asset_id}}", "restore"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "{{soft_deleted_asset_id}}",
+                "restore"
+              ]
             }
           }
         },
@@ -757,12 +980,21 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/ip-assets/{{soft_deleted_asset_id}}/restore",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets", "{{soft_deleted_asset_id}}", "restore"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "{{soft_deleted_asset_id}}",
+                "restore"
+              ]
             }
           }
         },
@@ -781,12 +1013,21 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/ip-assets/{{soft_deleted_asset_id}}/restore",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets", "{{soft_deleted_asset_id}}", "restore"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "{{soft_deleted_asset_id}}",
+                "restore"
+              ]
             }
           }
         },
@@ -808,12 +1049,21 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/ip-assets/00000000-0000-0000-0000-000000000000/restore",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets", "00000000-0000-0000-0000-000000000000", "restore"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "00000000-0000-0000-0000-000000000000",
+                "restore"
+              ]
             }
           }
         },
@@ -841,12 +1091,21 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/ip-assets/{{soft_deleted_asset_id}}/hard",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets", "{{soft_deleted_asset_id}}", "hard"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "{{soft_deleted_asset_id}}",
+                "hard"
+              ]
             }
           }
         },
@@ -865,12 +1124,21 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/ip-assets/{{soft_deleted_asset_id}}/hard",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets", "{{soft_deleted_asset_id}}", "hard"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "{{soft_deleted_asset_id}}",
+                "hard"
+              ]
             }
           }
         },
@@ -892,12 +1160,21 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/ip-assets/00000000-0000-0000-0000-000000000000/hard",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets", "00000000-0000-0000-0000-000000000000", "hard"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "00000000-0000-0000-0000-000000000000",
+                "hard"
+              ]
             }
           }
         },
@@ -918,8 +1195,810 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/ip-assets/{{soft_deleted_asset_id}}/hard",
-              "host": ["{{base_url}}"],
-              "path": ["ip-assets", "{{soft_deleted_asset_id}}", "hard"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "{{soft_deleted_asset_id}}",
+                "hard"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "0. Setup Asset",
+      "item": [
+        {
+          "name": "POST Create Asset – for upload/import-export tests",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);",
+                  "const id = pm.response.json().data?.id;",
+                  "if (id) pm.collectionVariables.set('created_asset_id', id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asset_type\": \"trademark\",\n  \"title\": \"Asset test upload Postman\",\n  \"application_number\": \"TM-UPLOAD-POSTMAN-001\",\n  \"application_date\": \"2024-01-10\",\n  \"publication_date\": \"2024-03-01\",\n  \"grant_date\": \"2024-06-20\",\n  \"expiry_date\": \"2034-06-20\",\n  \"status\": \"granted\",\n  \"applicant_name\": \"Cong ty Test Upload\",\n  \"province_code\": \"BN\",\n  \"district_code\": \"BN001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ip-assets",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. UPLOAD",
+      "item": [
+        {
+          "name": "11.1 POST Upload Image – success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test('has image payload fields', () => {",
+                  "  const d = pm.response.json().data;",
+                  "  ['id','asset_id','image_url','image_type','file_name','file_size_kb','mime_type'].forEach(k => pm.expect(d).to.have.property(k));",
+                  "});",
+                  "const id = pm.response.json().data?.id;",
+                  "if (id) pm.collectionVariables.set('uploaded_image_id', id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{sample_image_path}}"
+                },
+                {
+                  "key": "image_type",
+                  "value": "logo",
+                  "type": "text"
+                },
+                {
+                  "key": "is_primary",
+                  "value": "true",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/ip-assets/{{created_asset_id}}/images",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "{{created_asset_id}}",
+                "images"
+              ]
+            }
+          }
+        },
+        {
+          "name": "11.1 POST Upload Image – invalid file type (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error UPLOAD_FILE_TYPE_INVALID', () => pm.expect(pm.response.json().error.code).to.equal('UPLOAD_FILE_TYPE_INVALID'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{invalid_image_path}}"
+                },
+                {
+                  "key": "image_type",
+                  "value": "logo",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/ip-assets/{{created_asset_id}}/images",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "{{created_asset_id}}",
+                "images"
+              ]
+            }
+          }
+        },
+        {
+          "name": "11.1 POST Upload Image – asset not found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error ASSET_NOT_FOUND', () => pm.expect(pm.response.json().error.code).to.equal('ASSET_NOT_FOUND'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{sample_image_path}}"
+                },
+                {
+                  "key": "image_type",
+                  "value": "main",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/ip-assets/00000000-0000-0000-0000-000000000000/images",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "00000000-0000-0000-0000-000000000000",
+                "images"
+              ]
+            }
+          }
+        },
+        {
+          "name": "11.2 POST Upload Document – success (PDF)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test('has document payload fields', () => {",
+                  "  const d = pm.response.json().data;",
+                  "  ['id','asset_id','doc_url','doc_type','file_name','file_size_kb'].forEach(k => pm.expect(d).to.have.property(k));",
+                  "});",
+                  "const id = pm.response.json().data?.id;",
+                  "if (id) pm.collectionVariables.set('uploaded_document_id', id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{sample_pdf_path}}"
+                },
+                {
+                  "key": "doc_type",
+                  "value": "description",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/ip-assets/{{created_asset_id}}/documents",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "{{created_asset_id}}",
+                "documents"
+              ]
+            }
+          }
+        },
+        {
+          "name": "11.2 POST Upload Document – success (DOCX)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{sample_docx_path}}"
+                },
+                {
+                  "key": "doc_type",
+                  "value": "certificate",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/ip-assets/{{created_asset_id}}/documents",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "{{created_asset_id}}",
+                "documents"
+              ]
+            }
+          }
+        },
+        {
+          "name": "11.2 POST Upload Document – invalid file type (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error UPLOAD_FILE_TYPE_INVALID', () => pm.expect(pm.response.json().error.code).to.equal('UPLOAD_FILE_TYPE_INVALID'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{invalid_image_path}}"
+                },
+                {
+                  "key": "doc_type",
+                  "value": "other",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/ip-assets/{{created_asset_id}}/documents",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "{{created_asset_id}}",
+                "documents"
+              ]
+            }
+          }
+        },
+        {
+          "name": "11.3 DELETE Image – success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ip-assets/{{created_asset_id}}/images/{{uploaded_image_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "{{created_asset_id}}",
+                "images",
+                "{{uploaded_image_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "11.3 DELETE Document – success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ip-assets/{{created_asset_id}}/documents/{{uploaded_document_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "{{created_asset_id}}",
+                "documents",
+                "{{uploaded_document_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "12. IMPORT / EXPORT",
+      "item": [
+        {
+          "name": "12.1 GET Import Template – success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has xlsx content type', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('spreadsheetml.sheet'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/import/template?asset_type=trademark",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "import",
+                "template"
+              ],
+              "query": [
+                {
+                  "key": "asset_type",
+                  "value": "trademark"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "12.1 GET Import Template – invalid asset_type (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422 or 400', () => pm.expect(pm.response.code).to.be.oneOf([400,422]));",
+                  "pm.test('Error VALIDATION_ERROR', () => pm.expect(pm.response.json().error.code).to.equal('VALIDATION_ERROR'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/import/template?asset_type=invalid",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "import",
+                "template"
+              ],
+              "query": [
+                {
+                  "key": "asset_type",
+                  "value": "invalid"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "12.2 POST Import – success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test('has import counters', () => {",
+                  "  const d = pm.response.json().data;",
+                  "  ['total_rows','imported','skipped','failed','errors'].forEach(k => pm.expect(d).to.have.property(k));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{sample_import_xlsx_path}}"
+                },
+                {
+                  "key": "asset_type",
+                  "value": "trademark",
+                  "type": "text"
+                },
+                {
+                  "key": "on_duplicate",
+                  "value": "skip",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/import",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "import"
+              ]
+            }
+          }
+        },
+        {
+          "name": "12.2 POST Import – invalid file type (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error UPLOAD_FILE_TYPE_INVALID', () => pm.expect(pm.response.json().error.code).to.equal('UPLOAD_FILE_TYPE_INVALID'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{invalid_image_path}}"
+                },
+                {
+                  "key": "asset_type",
+                  "value": "trademark",
+                  "type": "text"
+                },
+                {
+                  "key": "on_duplicate",
+                  "value": "skip",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/import",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "import"
+              ]
+            }
+          }
+        },
+        {
+          "name": "12.3 GET Export – excel success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has xlsx content type', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('spreadsheetml.sheet'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/export?format=excel&asset_type=trademark",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "export"
+              ],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "excel"
+                },
+                {
+                  "key": "asset_type",
+                  "value": "trademark"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "12.3 GET Export – csv success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has csv content type', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('text/csv'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/export?format=csv&ids={{created_asset_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "export"
+              ],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "csv"
+                },
+                {
+                  "key": "ids",
+                  "value": "{{created_asset_id}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "12.3 GET Export – unauthorized (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/export?format=excel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "export"
+              ],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "excel"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "12.4 GET Export PDF – success (public)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has pdf content type', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/pdf'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ip-assets/{{created_asset_id}}/export-pdf",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "{{created_asset_id}}",
+                "export-pdf"
+              ]
+            }
+          }
+        },
+        {
+          "name": "12.4 GET Export PDF – invalid UUID (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error VALIDATION_ERROR', () => pm.expect(pm.response.json().error.code).to.equal('VALIDATION_ERROR'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ip-assets/not-a-uuid/export-pdf",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ip-assets",
+                "not-a-uuid",
+                "export-pdf"
+              ]
             }
           }
         }

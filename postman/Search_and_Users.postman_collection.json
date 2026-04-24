@@ -1,0 +1,1230 @@
+{
+  "info": {
+    "name": "LCMS-API – Search & Users (Section 6 & 7)",
+    "description": "Section 6: SEARCH – GET /search, GET /search/suggest\nSection 7: USERS – GET/POST/PATCH /users, toggle-active, reset-password\n\nChạy theo thứ tự trong mỗi folder. Variable 'created_user_id' được tự động set sau POST Create.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3000/api/v1" },
+    { "key": "admin_token", "value": "REPLACE_WITH_ADMIN_JWT" },
+    { "key": "staff_token", "value": "REPLACE_WITH_STAFF_JWT" },
+    { "key": "created_user_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "6. SEARCH",
+      "item": [
+        {
+          "name": "6.1 GET Search – success (q=nhãn hiệu)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "",
+                  "pm.test('success = true', () => {",
+                  "  pm.expect(pm.response.json().success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('data is array', () => {",
+                  "  pm.expect(pm.response.json().data).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('meta has pagination fields', () => {",
+                  "  const meta = pm.response.json().meta;",
+                  "  pm.expect(meta).to.have.all.keys('page', 'limit', 'total', 'totalPages');",
+                  "});",
+                  "",
+                  "pm.test('facets has asset_type and status', () => {",
+                  "  const facets = pm.response.json().facets;",
+                  "  pm.expect(facets).to.have.property('asset_type');",
+                  "  pm.expect(facets).to.have.property('status');",
+                  "});",
+                  "",
+                  "pm.test('each item has highlight field', () => {",
+                  "  pm.response.json().data.forEach(item => {",
+                  "    pm.expect(item).to.have.property('highlight');",
+                  "    pm.expect(item.highlight).to.have.property('title');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?q=nhãn hiệu&page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "q", "value": "nhãn hiệu" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "6.1 GET Search – filter asset_type=trademark",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test('All items are trademark', () => {",
+                  "  pm.response.json().data.forEach(item => {",
+                  "    pm.expect(item.asset_type).to.equal('trademark');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?q=nhãn&asset_type=trademark",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "q", "value": "nhãn" },
+                { "key": "asset_type", "value": "trademark" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "6.1 GET Search – filter status=granted",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?q=a&status=granted",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "q", "value": "a" },
+                { "key": "status", "value": "granted" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "6.1 GET Search – filter date range",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?q=a&application_date_from=2020-01-01&application_date_to=2025-12-31",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "q", "value": "a" },
+                { "key": "application_date_from", "value": "2020-01-01" },
+                { "key": "application_date_to", "value": "2025-12-31" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "6.1 GET Search – missing q (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error VALIDATION_ERROR', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.be.false;",
+                  "  pm.expect(body.error.code).to.equal('VALIDATION_ERROR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?page=1",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "page", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "6.1 GET Search – empty q (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('success = false', () => pm.expect(pm.response.json().success).to.be.false);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?q=",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "q", "value": "" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "6.2 GET Suggest – success (q=nhã ≥3 ký tự)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test('data is array', () => pm.expect(pm.response.json().data).to.be.an('array'));",
+                  "pm.test('each item has id, title, asset_type', () => {",
+                  "  pm.response.json().data.forEach(item => {",
+                  "    pm.expect(item).to.have.property('id');",
+                  "    pm.expect(item).to.have.property('title');",
+                  "    pm.expect(item).to.have.property('asset_type');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search/suggest?q=nhã",
+              "host": ["{{base_url}}"],
+              "path": ["search", "suggest"],
+              "query": [
+                { "key": "q", "value": "nhã" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "6.2 GET Suggest – filter asset_type",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search/suggest?q=nhã&asset_type=trademark",
+              "host": ["{{base_url}}"],
+              "path": ["search", "suggest"],
+              "query": [
+                { "key": "q", "value": "nhã" },
+                { "key": "asset_type", "value": "trademark" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "6.2 GET Suggest – q < 3 ký tự (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error VALIDATION_ERROR', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.be.false;",
+                  "  pm.expect(body.error.code).to.equal('VALIDATION_ERROR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search/suggest?q=ab",
+              "host": ["{{base_url}}"],
+              "path": ["search", "suggest"],
+              "query": [
+                { "key": "q", "value": "ab" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "6.2 GET Suggest – missing q (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('success = false', () => pm.expect(pm.response.json().success).to.be.false);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search/suggest",
+              "host": ["{{base_url}}"],
+              "path": ["search", "suggest"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. USERS (Admin only)",
+      "item": [
+        {
+          "name": "7.1 GET List Users – success (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test('data is array', () => pm.expect(pm.response.json().data).to.be.an('array'));",
+                  "pm.test('meta has pagination', () => {",
+                  "  const meta = pm.response.json().meta;",
+                  "  pm.expect(meta).to.have.all.keys('page', 'limit', 'total', 'totalPages');",
+                  "});",
+                  "pm.test('no password_hash in any item', () => {",
+                  "  pm.response.json().data.forEach(u => {",
+                  "    pm.expect(u).to.not.have.property('password_hash');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["users"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "7.1 GET List Users – filter role=staff",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('All items have role=staff', () => {",
+                  "  pm.response.json().data.forEach(u => {",
+                  "    pm.expect(u.role).to.equal('staff');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users?role=staff",
+              "host": ["{{base_url}}"],
+              "path": ["users"],
+              "query": [
+                { "key": "role", "value": "staff" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "7.1 GET List Users – filter q + is_active=true",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users?q=nguyen&is_active=true",
+              "host": ["{{base_url}}"],
+              "path": ["users"],
+              "query": [
+                { "key": "q", "value": "nguyen" },
+                { "key": "is_active", "value": "true" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "7.1 GET List Users – unauthorized (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "7.1 GET List Users – forbidden Staff (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Error FORBIDDEN', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('FORBIDDEN');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "7.2 POST Create User – success (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test('Has UUID id', () => {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.id).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);",
+                  "});",
+                  "pm.test('no password_hash in response', () => {",
+                  "  pm.expect(pm.response.json().data).to.not.have.property('password_hash');",
+                  "});",
+                  "pm.test('is_active = true by default', () => {",
+                  "  pm.expect(pm.response.json().data.is_active).to.be.true;",
+                  "});",
+                  "pm.test('role = staff', () => {",
+                  "  pm.expect(pm.response.json().data.role).to.equal('staff');",
+                  "});",
+                  "// Save ID for subsequent tests",
+                  "const id = pm.response.json().data?.id;",
+                  "if (id) pm.collectionVariables.set('created_user_id', id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"staff_postman_test\",\n  \"email\": \"postman.test@shtt.bacninh.gov.vn\",\n  \"password\": \"Postman@123456\",\n  \"full_name\": \"Nhân viên Test Postman\",\n  \"role\": \"staff\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "7.2 POST Create User – duplicate username (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Error USER_USERNAME_EXISTS', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('USER_USERNAME_EXISTS');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"staff_postman_test\",\n  \"email\": \"other.email@shtt.bacninh.gov.vn\",\n  \"password\": \"Postman@123456\",\n  \"full_name\": \"Người dùng khác\",\n  \"role\": \"staff\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "7.2 POST Create User – duplicate email (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Error USER_EMAIL_EXISTS', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('USER_EMAIL_EXISTS');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"staff_postman_test_2\",\n  \"email\": \"postman.test@shtt.bacninh.gov.vn\",\n  \"password\": \"Postman@123456\",\n  \"full_name\": \"Người dùng khác\",\n  \"role\": \"staff\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "7.2 POST Create User – weak password (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error VALIDATION_ERROR', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('VALIDATION_ERROR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"staff_weakpass\",\n  \"email\": \"weakpass@shtt.bacninh.gov.vn\",\n  \"password\": \"12345678\",\n  \"full_name\": \"Test Yếu\",\n  \"role\": \"staff\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "7.2 POST Create User – invalid username chars (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error VALIDATION_ERROR', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('VALIDATION_ERROR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"user name có dấu\",\n  \"email\": \"valid@shtt.bacninh.gov.vn\",\n  \"password\": \"Postman@123456\",\n  \"full_name\": \"Test\",\n  \"role\": \"staff\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "7.2 POST Create User – missing required fields (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error VALIDATION_ERROR', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('VALIDATION_ERROR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"staff_incomplete\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "7.2 POST Create User – forbidden Staff (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"staff_by_staff\",\n  \"email\": \"bystaff@shtt.bacninh.gov.vn\",\n  \"password\": \"Postman@123456\",\n  \"full_name\": \"Tạo bởi Staff\",\n  \"role\": \"staff\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "7.3 GET User by ID – success (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test('no password_hash', () => {",
+                  "  pm.expect(pm.response.json().data).to.not.have.property('password_hash');",
+                  "});",
+                  "pm.test('has detail fields', () => {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data).to.have.property('failed_login_count');",
+                  "  pm.expect(data).to.have.property('locked_until');",
+                  "  pm.expect(data).to.have.property('last_login_at');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/{{created_user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{created_user_id}}"]
+            }
+          }
+        },
+        {
+          "name": "7.3 GET User by ID – not found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error USER_NOT_FOUND', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('USER_NOT_FOUND');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/00000000-0000-0000-0000-000000000000",
+              "host": ["{{base_url}}"],
+              "path": ["users", "00000000-0000-0000-0000-000000000000"]
+            }
+          }
+        },
+        {
+          "name": "7.3 GET User by ID – invalid UUID (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error VALIDATION_ERROR', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('VALIDATION_ERROR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/not-a-uuid",
+              "host": ["{{base_url}}"],
+              "path": ["users", "not-a-uuid"]
+            }
+          }
+        },
+        {
+          "name": "7.4 PATCH Update User – success (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('full_name updated', () => {",
+                  "  pm.expect(pm.response.json().data.full_name).to.equal('Nhân viên Test Postman (Cập nhật)');",
+                  "});",
+                  "pm.test('no password_hash', () => {",
+                  "  pm.expect(pm.response.json().data).to.not.have.property('password_hash');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Nhân viên Test Postman (Cập nhật)\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/{{created_user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{created_user_id}}"]
+            }
+          }
+        },
+        {
+          "name": "7.4 PATCH Update User – change role to admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('role updated to admin', () => {",
+                  "  pm.expect(pm.response.json().data.role).to.equal('admin');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/{{created_user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{created_user_id}}"]
+            }
+          }
+        },
+        {
+          "name": "7.4 PATCH Update User – duplicate email (409)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Thay 'existing@shtt.bacninh.gov.vn' bằng email của user khác đã tồn tại trong DB"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Chỉ chạy nếu email dưới đây đã tồn tại trong DB",
+                  "pm.test('Status 409 nếu email đã tồn tại', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 409]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"existing@shtt.bacninh.gov.vn\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/{{created_user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{created_user_id}}"]
+            }
+          }
+        },
+        {
+          "name": "7.4 PATCH Update User – not found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error USER_NOT_FOUND', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('USER_NOT_FOUND');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Không tồn tại\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/00000000-0000-0000-0000-000000000000",
+              "host": ["{{base_url}}"],
+              "path": ["users", "00000000-0000-0000-0000-000000000000"]
+            }
+          }
+        },
+        {
+          "name": "7.5 PATCH Toggle Active – lock (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('is_active toggled', () => {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data).to.have.property('is_active');",
+                  "  pm.expect(data).to.have.property('message');",
+                  "  pm.expect(data.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/{{created_user_id}}/toggle-active",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{created_user_id}}", "toggle-active"]
+            }
+          }
+        },
+        {
+          "name": "7.5 PATCH Toggle Active – unlock again (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('is_active = true after unlock', () => {",
+                  "  pm.expect(pm.response.json().data.is_active).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/{{created_user_id}}/toggle-active",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{created_user_id}}", "toggle-active"]
+            }
+          }
+        },
+        {
+          "name": "7.5 PATCH Toggle Active – self lock (422)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Lấy Admin ID từ JWT: decode payload base64 (phần giữa của token)",
+                  "const token = pm.collectionVariables.get('admin_token');",
+                  "if (token && token !== 'REPLACE_WITH_ADMIN_JWT') {",
+                  "  try {",
+                  "    const payload = JSON.parse(atob(token.split('.')[1]));",
+                  "    pm.collectionVariables.set('admin_user_id', payload.sub);",
+                  "  } catch(e) {}",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422 – Admin tự khóa mình', () => pm.response.to.have.status(422));",
+                  "pm.test('Error UNPROCESSABLE_ENTITY', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('UNPROCESSABLE_ENTITY');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/{{admin_user_id}}/toggle-active",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{admin_user_id}}", "toggle-active"]
+            }
+          }
+        },
+        {
+          "name": "7.5 PATCH Toggle Active – not found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error USER_NOT_FOUND', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('USER_NOT_FOUND');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/00000000-0000-0000-0000-000000000000/toggle-active",
+              "host": ["{{base_url}}"],
+              "path": ["users", "00000000-0000-0000-0000-000000000000", "toggle-active"]
+            }
+          }
+        },
+        {
+          "name": "7.6 POST Reset Password – success (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test('message present', () => {",
+                  "  pm.expect(pm.response.json().data.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"new_password\": \"NewSecure@789012\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/{{created_user_id}}/reset-password",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{created_user_id}}", "reset-password"]
+            }
+          }
+        },
+        {
+          "name": "7.6 POST Reset Password – weak password (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error VALIDATION_ERROR', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('VALIDATION_ERROR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"new_password\": \"tooshort\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/{{created_user_id}}/reset-password",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{created_user_id}}", "reset-password"]
+            }
+          }
+        },
+        {
+          "name": "7.6 POST Reset Password – missing field (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error VALIDATION_ERROR', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('VALIDATION_ERROR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/{{created_user_id}}/reset-password",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{created_user_id}}", "reset-password"]
+            }
+          }
+        },
+        {
+          "name": "7.6 POST Reset Password – not found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error USER_NOT_FOUND', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('USER_NOT_FOUND');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"new_password\": \"NewSecure@789012\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/00000000-0000-0000-0000-000000000000/reset-password",
+              "host": ["{{base_url}}"],
+              "path": ["users", "00000000-0000-0000-0000-000000000000", "reset-password"]
+            }
+          }
+        },
+        {
+          "name": "7.6 POST Reset Password – forbidden Staff (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"new_password\": \"NewSecure@789012\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/{{created_user_id}}/reset-password",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{created_user_id}}", "reset-password"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

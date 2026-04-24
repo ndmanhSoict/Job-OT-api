@@ -37,3 +37,27 @@ export const loginRateLimit = rateLimit({
     'Quá nhiều lần thử đăng nhập, vui lòng thử lại sau 15 phút'
   ),
 });
+
+/** Export PDF public: 10 req/phút/IP */
+export const exportPdfRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: rateLimitResponse(
+    ErrorCode.TOO_MANY_REQUESTS,
+    'Quá nhiều lần xuất PDF, vui lòng thử lại sau'
+  ),
+});
+
+/** Public export: 5 req/phút/IP – giới hạn nghiêm ngặt cho guest export */
+export const publicExportRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: rateLimitResponse(
+    ErrorCode.TOO_MANY_REQUESTS,
+    'Quá nhiều lần xuất dữ liệu, vui lòng thử lại sau'
+  ),
+});

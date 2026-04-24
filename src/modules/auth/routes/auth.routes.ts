@@ -3,7 +3,7 @@ import { loginRateLimit, authRateLimit } from '../../../middleware/rate-limit.mi
 import { authenticateJWT, requireAuth } from '../../../middleware/auth.middleware';
 import { validateBody } from '../../../middleware/validate.middleware';
 import { AuthController } from '../controllers/auth.controller';
-import { LoginDto, RefreshTokenDto, LogoutDto } from '../dto/auth.dto';
+import { LoginDto, RefreshTokenDto, LogoutDto, ChangePasswordDto } from '../dto/auth.dto';
 
 const router = Router();
 
@@ -41,9 +41,17 @@ router.post('/logout',
 
 router.get('/me',
   authRateLimit,
-  authenticateJWT,   // ← thêm dòng này
+  authenticateJWT,
   requireAuth,
   AuthController.me,
+);
+
+router.post('/change-password',
+  authRateLimit,
+  authenticateJWT,
+  requireAuth,
+  validateBody(ChangePasswordDto),
+  AuthController.changePassword,
 );
 
 export { router as authRouter };

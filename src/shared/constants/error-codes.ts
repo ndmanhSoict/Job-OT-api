@@ -38,6 +38,17 @@ export const ErrorCode = {
   // === Reference Data ===
   REF_DISTRICT_NOT_FOUND: 'REF_DISTRICT_NOT_FOUND',
   REF_PROVINCE_NOT_FOUND: 'REF_PROVINCE_NOT_FOUND',
+
+  // === Organizations ===
+  ORGANIZATION_NOT_FOUND: 'ORGANIZATION_NOT_FOUND',
+
+  // === Persons ===
+  PERSON_NOT_FOUND: 'PERSON_NOT_FOUND',
+
+  // === Craft Village ===
+  CRAFT_VILLAGE_NOT_FOUND: 'CRAFT_VILLAGE_NOT_FOUND',
+  ASSET_CRAFT_VILLAGE_ALREADY_LINKED: 'ASSET_CRAFT_VILLAGE_ALREADY_LINKED',
+  ASSET_CRAFT_VILLAGE_NOT_LINKED: 'ASSET_CRAFT_VILLAGE_NOT_LINKED',
 } as const;
 
 export type ErrorCodeType = (typeof ErrorCode)[keyof typeof ErrorCode];

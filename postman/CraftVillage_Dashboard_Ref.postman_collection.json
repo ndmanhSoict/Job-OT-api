@@ -1,0 +1,1299 @@
+{
+  "info": {
+    "name": "LCMS-API – Craft Villages, Dashboard & Ref (Section 8-9-10)",
+    "description": "Section 8: CRAFT VILLAGES – 5 endpoints\nSection 9: DASHBOARD – 3 endpoints (Staff/Admin)\nSection 10: REFERENCE DATA – 7 endpoints (public)\n\nChạy theo thứ tự trong mỗi folder. 'created_village_id' được tự động set sau POST Create.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3000/api/v1" },
+    { "key": "admin_token", "value": "REPLACE_WITH_ADMIN_JWT" },
+    { "key": "staff_token", "value": "REPLACE_WITH_STAFF_JWT" },
+    { "key": "created_village_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "8. CRAFT VILLAGES",
+      "item": [
+        {
+          "name": "8.1 GET List – no auth (Guest)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test('data is array', () => pm.expect(pm.response.json().data).to.be.an('array'));",
+                  "pm.test('meta has pagination', () => {",
+                  "  const m = pm.response.json().meta;",
+                  "  pm.expect(m).to.have.all.keys('page', 'limit', 'total', 'totalPages');",
+                  "});",
+                  "pm.test('each item has required fields', () => {",
+                  "  pm.response.json().data.forEach(v => {",
+                  "    pm.expect(v).to.have.property('id');",
+                  "    pm.expect(v).to.have.property('village_name');",
+                  "    pm.expect(v).to.have.property('district_code');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/craft-villages?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["craft-villages"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "8.1 GET List – filter district_code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('All items match district', () => {",
+                  "  pm.response.json().data.forEach(v => {",
+                  "    pm.expect(v.district_code).to.equal('BN-QV');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/craft-villages?district_code=BN-QV",
+              "host": ["{{base_url}}"],
+              "path": ["craft-villages"],
+              "query": [{ "key": "district_code", "value": "BN-QV" }]
+            }
+          }
+        },
+        {
+          "name": "8.1 GET List – search q=gốm",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/craft-villages?q=gốm",
+              "host": ["{{base_url}}"],
+              "path": ["craft-villages"],
+              "query": [{ "key": "q", "value": "gốm" }]
+            }
+          }
+        },
+        {
+          "name": "8.2 POST Create – success (Staff)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test('Has UUID id', () => {",
+                  "  pm.expect(pm.response.json().data.id).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);",
+                  "});",
+                  "pm.test('village_name matches', () => {",
+                  "  pm.expect(pm.response.json().data.village_name).to.equal('Làng nghề Test Postman');",
+                  "});",
+                  "pm.test('products is array', () => {",
+                  "  pm.expect(pm.response.json().data.products).to.be.an('array');",
+                  "});",
+                  "const id = pm.response.json().data?.id;",
+                  "if (id) pm.collectionVariables.set('created_village_id', id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"village_name\": \"Làng nghề Test Postman\",\n  \"products\": [\"đồ gốm\", \"đồ thủ công\"],\n  \"address\": \"Xã Test, Huyện Test, Bắc Ninh\",\n  \"district_code\": \"BN-QV\",\n  \"recognition_number\": \"99/QĐ-UBND\",\n  \"recognition_date\": \"2015-05-20\",\n  \"description\": \"Làng nghề thử nghiệm bằng Postman\",\n  \"representative_image\": \"https://example.com/image.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/craft-villages",
+              "host": ["{{base_url}}"],
+              "path": ["craft-villages"]
+            }
+          }
+        },
+        {
+          "name": "8.2 POST Create – missing required fields (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error VALIDATION_ERROR', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('VALIDATION_ERROR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"village_name\": \"Thiếu address và district\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/craft-villages",
+              "host": ["{{base_url}}"],
+              "path": ["craft-villages"]
+            }
+          }
+        },
+        {
+          "name": "8.2 POST Create – invalid image URL (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error VALIDATION_ERROR', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('VALIDATION_ERROR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"village_name\": \"Làng test\",\n  \"products\": [\"sản phẩm\"],\n  \"address\": \"Địa chỉ test\",\n  \"district_code\": \"BN-QV\",\n  \"representative_image\": \"not-a-url\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/craft-villages",
+              "host": ["{{base_url}}"],
+              "path": ["craft-villages"]
+            }
+          }
+        },
+        {
+          "name": "8.2 POST Create – unauthorized (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"village_name\": \"Test\",\n  \"products\": [\"sp\"],\n  \"address\": \"addr\",\n  \"district_code\": \"BN-QV\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/craft-villages",
+              "host": ["{{base_url}}"],
+              "path": ["craft-villages"]
+            }
+          }
+        },
+        {
+          "name": "8.2 GET by ID – success (with related_assets)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test('has related_assets array', () => {",
+                  "  pm.expect(pm.response.json().data.related_assets).to.be.an('array');",
+                  "});",
+                  "pm.test('has village fields', () => {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d).to.have.property('village_name');",
+                  "  pm.expect(d).to.have.property('products');",
+                  "  pm.expect(d).to.have.property('address');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/craft-villages/{{created_village_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["craft-villages", "{{created_village_id}}"]
+            }
+          }
+        },
+        {
+          "name": "8.2 GET by ID – not found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error NOT_FOUND', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('NOT_FOUND');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/craft-villages/00000000-0000-0000-0000-000000000000",
+              "host": ["{{base_url}}"],
+              "path": ["craft-villages", "00000000-0000-0000-0000-000000000000"]
+            }
+          }
+        },
+        {
+          "name": "8.2 GET by ID – invalid UUID (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error VALIDATION_ERROR', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('VALIDATION_ERROR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/craft-villages/not-a-uuid",
+              "host": ["{{base_url}}"],
+              "path": ["craft-villages", "not-a-uuid"]
+            }
+          }
+        },
+        {
+          "name": "8.4 PATCH Update – success (Staff)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('village_name updated', () => {",
+                  "  pm.expect(pm.response.json().data.village_name).to.equal('Làng nghề Test Postman (Cập nhật)');",
+                  "});",
+                  "pm.test('description updated', () => {",
+                  "  pm.expect(pm.response.json().data.description).to.equal('Mô tả được cập nhật');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"village_name\": \"Làng nghề Test Postman (Cập nhật)\",\n  \"description\": \"Mô tả được cập nhật\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/craft-villages/{{created_village_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["craft-villages", "{{created_village_id}}"]
+            }
+          }
+        },
+        {
+          "name": "8.4 PATCH Update – not found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error NOT_FOUND', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('NOT_FOUND');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"village_name\": \"X\" }" },
+            "url": {
+              "raw": "{{base_url}}/craft-villages/00000000-0000-0000-0000-000000000000",
+              "host": ["{{base_url}}"],
+              "path": ["craft-villages", "00000000-0000-0000-0000-000000000000"]
+            }
+          }
+        },
+        {
+          "name": "8.4 PATCH Update – unauthorized (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{ \"village_name\": \"X\" }" },
+            "url": {
+              "raw": "{{base_url}}/craft-villages/{{created_village_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["craft-villages", "{{created_village_id}}"]
+            }
+          }
+        },
+        {
+          "name": "8.5 DELETE Soft Delete – success (Staff)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/craft-villages/{{created_village_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["craft-villages", "{{created_village_id}}"]
+            }
+          }
+        },
+        {
+          "name": "8.5 GET by ID – after soft-delete → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404 after soft-delete', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/craft-villages/{{created_village_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["craft-villages", "{{created_village_id}}"]
+            }
+          }
+        },
+        {
+          "name": "8.5 DELETE – not found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error NOT_FOUND', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('NOT_FOUND');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/craft-villages/00000000-0000-0000-0000-000000000000",
+              "host": ["{{base_url}}"],
+              "path": ["craft-villages", "00000000-0000-0000-0000-000000000000"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. DASHBOARD (Staff/Admin)",
+      "item": [
+        {
+          "name": "9.1 GET Stats – success (Staff)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test('has total (number)', () => {",
+                  "  pm.expect(pm.response.json().data.total).to.be.a('number');",
+                  "});",
+                  "pm.test('by_type has all AssetType keys', () => {",
+                  "  const bt = pm.response.json().data.by_type;",
+                  "  ['copyright','gi','trademark','patent','design','craft'].forEach(k => {",
+                  "    pm.expect(bt).to.have.property(k);",
+                  "  });",
+                  "});",
+                  "pm.test('by_status exists', () => {",
+                  "  pm.expect(pm.response.json().data.by_status).to.be.an('object');",
+                  "});",
+                  "pm.test('craft_villages_total is number', () => {",
+                  "  pm.expect(pm.response.json().data.craft_villages_total).to.be.a('number');",
+                  "});",
+                  "pm.test('updated_at is ISO string', () => {",
+                  "  pm.expect(pm.response.json().data.updated_at).to.match(/^\\d{4}-\\d{2}-\\d{2}T/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/stats",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "stats"]
+            }
+          }
+        },
+        {
+          "name": "9.1 GET Stats – Admin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/stats",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "stats"]
+            }
+          }
+        },
+        {
+          "name": "9.1 GET Stats – unauthorized (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard/stats",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "stats"]
+            }
+          }
+        },
+        {
+          "name": "9.2 GET Expiring – default (days=90)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test('data is array', () => pm.expect(pm.response.json().data).to.be.an('array'));",
+                  "pm.test('meta has total and days_threshold', () => {",
+                  "  const m = pm.response.json().meta;",
+                  "  pm.expect(m).to.have.property('total');",
+                  "  pm.expect(m).to.have.property('days_threshold');",
+                  "  pm.expect(m.days_threshold).to.equal(90);",
+                  "});",
+                  "pm.test('each item has days_remaining', () => {",
+                  "  pm.response.json().data.forEach(item => {",
+                  "    pm.expect(item).to.have.property('days_remaining');",
+                  "    pm.expect(item.days_remaining).to.be.a('number');",
+                  "    pm.expect(item.days_remaining).to.be.at.least(0);",
+                  "    pm.expect(item.days_remaining).to.be.at.most(90);",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/expiring",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "expiring"]
+            }
+          }
+        },
+        {
+          "name": "9.2 GET Expiring – custom days=30",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('meta.days_threshold = 30', () => {",
+                  "  pm.expect(pm.response.json().meta.days_threshold).to.equal(30);",
+                  "});",
+                  "pm.test('days_remaining <= 30', () => {",
+                  "  pm.response.json().data.forEach(item => {",
+                  "    pm.expect(item.days_remaining).to.be.at.most(30);",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/expiring?days=30",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "expiring"],
+              "query": [{ "key": "days", "value": "30" }]
+            }
+          }
+        },
+        {
+          "name": "9.2 GET Expiring – days=365 (max)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('meta.days_threshold = 365', () => {",
+                  "  pm.expect(pm.response.json().meta.days_threshold).to.equal(365);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/expiring?days=365",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "expiring"],
+              "query": [{ "key": "days", "value": "365" }]
+            }
+          }
+        },
+        {
+          "name": "9.2 GET Expiring – days > 365 (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error VALIDATION_ERROR', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('VALIDATION_ERROR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/expiring?days=366",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "expiring"],
+              "query": [{ "key": "days", "value": "366" }]
+            }
+          }
+        },
+        {
+          "name": "9.2 GET Expiring – days < 1 (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error VALIDATION_ERROR', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('VALIDATION_ERROR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/expiring?days=0",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "expiring"],
+              "query": [{ "key": "days", "value": "0" }]
+            }
+          }
+        },
+        {
+          "name": "9.3 GET Timeline – groupBy=month (default)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test('has year, groupBy, series', () => {",
+                  "  const d = pm.response.json().data;",
+                  "  pm.expect(d).to.have.property('year');",
+                  "  pm.expect(d).to.have.property('groupBy');",
+                  "  pm.expect(d.groupBy).to.equal('month');",
+                  "  pm.expect(d.series).to.be.an('array');",
+                  "});",
+                  "pm.test('each series item has period, filed, granted', () => {",
+                  "  pm.response.json().data.series.forEach(s => {",
+                  "    pm.expect(s).to.have.property('period');",
+                  "    pm.expect(s).to.have.property('filed');",
+                  "    pm.expect(s).to.have.property('granted');",
+                  "    pm.expect(s.filed).to.be.a('number');",
+                  "    pm.expect(s.granted).to.be.a('number');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/timeline?year=2024&groupBy=month",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "timeline"],
+              "query": [
+                { "key": "year", "value": "2024" },
+                { "key": "groupBy", "value": "month" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "9.3 GET Timeline – groupBy=quarter",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('groupBy = quarter', () => {",
+                  "  pm.expect(pm.response.json().data.groupBy).to.equal('quarter');",
+                  "});",
+                  "pm.test('period format contains Q', () => {",
+                  "  pm.response.json().data.series.forEach(s => {",
+                  "    pm.expect(s.period).to.include('Q');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/timeline?year=2024&groupBy=quarter",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "timeline"],
+              "query": [
+                { "key": "year", "value": "2024" },
+                { "key": "groupBy", "value": "quarter" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "9.3 GET Timeline – filter asset_type=trademark",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/timeline?year=2024&groupBy=month&asset_type=trademark",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "timeline"],
+              "query": [
+                { "key": "year", "value": "2024" },
+                { "key": "groupBy", "value": "month" },
+                { "key": "asset_type", "value": "trademark" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "9.3 GET Timeline – invalid groupBy (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error VALIDATION_ERROR', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('VALIDATION_ERROR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/timeline?groupBy=week",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "timeline"],
+              "query": [{ "key": "groupBy", "value": "week" }]
+            }
+          }
+        },
+        {
+          "name": "9.3 GET Timeline – invalid asset_type (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error VALIDATION_ERROR', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('VALIDATION_ERROR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/timeline?asset_type=invalid",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "timeline"],
+              "query": [{ "key": "asset_type", "value": "invalid" }]
+            }
+          }
+        },
+        {
+          "name": "9.x GET Dashboard – unauthorized (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard/expiring",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "expiring"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. REFERENCE DATA (public)",
+      "item": [
+        {
+          "name": "10.1 GET Provinces",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('success = true', () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test('data is array', () => pm.expect(pm.response.json().data).to.be.an('array'));",
+                  "pm.test('each item has code and name', () => {",
+                  "  pm.response.json().data.forEach(p => {",
+                  "    pm.expect(p).to.have.property('code');",
+                  "    pm.expect(p).to.have.property('name');",
+                  "  });",
+                  "});",
+                  "pm.test('contains BN (Bắc Ninh)', () => {",
+                  "  const codes = pm.response.json().data.map(p => p.code);",
+                  "  pm.expect(codes).to.include('BN');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ref/provinces",
+              "host": ["{{base_url}}"],
+              "path": ["ref", "provinces"]
+            }
+          }
+        },
+        {
+          "name": "10.2 GET Districts – no filter",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('data is array', () => pm.expect(pm.response.json().data).to.be.an('array'));",
+                  "pm.test('each item has code, province_code, name', () => {",
+                  "  pm.response.json().data.forEach(d => {",
+                  "    pm.expect(d).to.have.property('code');",
+                  "    pm.expect(d).to.have.property('province_code');",
+                  "    pm.expect(d).to.have.property('name');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ref/districts",
+              "host": ["{{base_url}}"],
+              "path": ["ref", "districts"]
+            }
+          }
+        },
+        {
+          "name": "10.2 GET Districts – filter province_code=BN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('All items have province_code=BN', () => {",
+                  "  pm.response.json().data.forEach(d => {",
+                  "    pm.expect(d.province_code).to.equal('BN');",
+                  "  });",
+                  "});",
+                  "pm.test('At least 8 districts (Bắc Ninh)', () => {",
+                  "  pm.expect(pm.response.json().data.length).to.be.at.least(8);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ref/districts?province_code=BN",
+              "host": ["{{base_url}}"],
+              "path": ["ref", "districts"],
+              "query": [{ "key": "province_code", "value": "BN" }]
+            }
+          }
+        },
+        {
+          "name": "10.7 GET Statuses",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('data is array', () => pm.expect(pm.response.json().data).to.be.an('array'));",
+                  "pm.test('each item has code, name_vi, sort_order', () => {",
+                  "  pm.response.json().data.forEach(s => {",
+                  "    pm.expect(s).to.have.property('code');",
+                  "    pm.expect(s).to.have.property('name_vi');",
+                  "    pm.expect(s).to.have.property('sort_order');",
+                  "  });",
+                  "});",
+                  "pm.test('contains granted status', () => {",
+                  "  const codes = pm.response.json().data.map(s => s.code);",
+                  "  pm.expect(codes).to.include('granted');",
+                  "});",
+                  "pm.test('sorted by sort_order', () => {",
+                  "  const orders = pm.response.json().data.map(s => s.sort_order);",
+                  "  for (let i = 1; i < orders.length; i++) {",
+                  "    pm.expect(orders[i]).to.be.at.least(orders[i-1]);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ref/statuses",
+              "host": ["{{base_url}}"],
+              "path": ["ref", "statuses"]
+            }
+          }
+        },
+        {
+          "name": "10.3 GET Nice Classes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('data is array', () => pm.expect(pm.response.json().data).to.be.an('array'));",
+                  "pm.test('each item has class_no and description_vi', () => {",
+                  "  pm.response.json().data.forEach(n => {",
+                  "    pm.expect(n).to.have.property('class_no');",
+                  "    pm.expect(n).to.have.property('description_vi');",
+                  "    pm.expect(n.class_no).to.be.within(1, 45);",
+                  "  });",
+                  "});",
+                  "pm.test('sorted by class_no ASC', () => {",
+                  "  const nos = pm.response.json().data.map(n => n.class_no);",
+                  "  for (let i = 1; i < nos.length; i++) {",
+                  "    pm.expect(nos[i]).to.be.at.least(nos[i-1]);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ref/nice-classes",
+              "host": ["{{base_url}}"],
+              "path": ["ref", "nice-classes"]
+            }
+          }
+        },
+        {
+          "name": "10.4 GET IPC Codes – level 1 (no params)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('data is array', () => pm.expect(pm.response.json().data).to.be.an('array'));",
+                  "pm.test('each item has code, level, description_vi', () => {",
+                  "  pm.response.json().data.forEach(c => {",
+                  "    pm.expect(c).to.have.property('code');",
+                  "    pm.expect(c).to.have.property('level');",
+                  "    pm.expect(c).to.have.property('description_vi');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ref/ipc-codes",
+              "host": ["{{base_url}}"],
+              "path": ["ref", "ipc-codes"]
+            }
+          }
+        },
+        {
+          "name": "10.4 GET IPC Codes – search q=A61",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('data is array', () => pm.expect(pm.response.json().data).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ref/ipc-codes?q=A61",
+              "host": ["{{base_url}}"],
+              "path": ["ref", "ipc-codes"],
+              "query": [{ "key": "q", "value": "A61" }]
+            }
+          }
+        },
+        {
+          "name": "10.4 GET IPC Codes – filter parent=A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('All items have parent_code=A', () => {",
+                  "  pm.response.json().data.forEach(c => {",
+                  "    pm.expect(c.parent_code).to.equal('A');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ref/ipc-codes?parent=A",
+              "host": ["{{base_url}}"],
+              "path": ["ref", "ipc-codes"],
+              "query": [{ "key": "parent", "value": "A" }]
+            }
+          }
+        },
+        {
+          "name": "10.5 GET Locarno Codes – level 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('data is array', () => pm.expect(pm.response.json().data).to.be.an('array'));",
+                  "pm.test('each item has code, level, description_vi', () => {",
+                  "  pm.response.json().data.forEach(c => {",
+                  "    pm.expect(c).to.have.property('code');",
+                  "    pm.expect(c).to.have.property('level');",
+                  "    pm.expect(c).to.have.property('description_vi');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ref/locarno-codes",
+              "host": ["{{base_url}}"],
+              "path": ["ref", "locarno-codes"]
+            }
+          }
+        },
+        {
+          "name": "10.5 GET Locarno Codes – filter parent=01",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('All items have parent_code=01', () => {",
+                  "  pm.response.json().data.forEach(c => {",
+                  "    pm.expect(c.parent_code).to.equal('01');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ref/locarno-codes?parent=01",
+              "host": ["{{base_url}}"],
+              "path": ["ref", "locarno-codes"],
+              "query": [{ "key": "parent", "value": "01" }]
+            }
+          }
+        },
+        {
+          "name": "10.6 GET Vienna Codes – level 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('data is array', () => pm.expect(pm.response.json().data).to.be.an('array'));",
+                  "pm.test('each item has code, level, description_vi', () => {",
+                  "  pm.response.json().data.forEach(c => {",
+                  "    pm.expect(c).to.have.property('code');",
+                  "    pm.expect(c).to.have.property('level');",
+                  "    pm.expect(c).to.have.property('description_vi');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ref/vienna-codes",
+              "host": ["{{base_url}}"],
+              "path": ["ref", "vienna-codes"]
+            }
+          }
+        },
+        {
+          "name": "10.6 GET Vienna Codes – filter parent=01",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('All items have parent_code=01', () => {",
+                  "  pm.response.json().data.forEach(c => {",
+                  "    pm.expect(c.parent_code).to.equal('01');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ref/vienna-codes?parent=01",
+              "host": ["{{base_url}}"],
+              "path": ["ref", "vienna-codes"],
+              "query": [{ "key": "parent", "value": "01" }]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

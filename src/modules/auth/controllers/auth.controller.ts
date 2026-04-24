@@ -71,4 +71,18 @@ export const AuthController = {
       next(err);
     }
   },
+
+  /**
+   * POST /auth/change-password
+   * req.user luôn tồn tại (đã qua requireAuth)
+   */
+  async changePassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { current_password, new_password } = req.body as { current_password: string; new_password: string };
+      await service.changePassword(req.user!.id, current_password, new_password);
+      sendSuccess(res, { message: 'Đổi mật khẩu thành công' });
+    } catch (err) {
+      next(err);
+    }
+  },
 };

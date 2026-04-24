@@ -1,6 +1,8 @@
 import 'reflect-metadata'; // Bắt buộc cho TypeORM
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs';
+import path from 'path';
 import { env } from '@config/env.config';
 import { connectDatabase } from '@infrastructure/database';
 import { logger } from '@infrastructure/logger/logger';
@@ -10,11 +12,14 @@ import { guestRateLimit } from '@middleware/rate-limit.middleware';
 import { v1Router } from './routes';
 
 const app = express();
+const uploadPath = path.resolve(env.upload.dest);
+fs.mkdirSync(uploadPath, { recursive: true });
 
 // 1. Global Middlewares
 app.use(cors({ origin: env.server.corsOrigins }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static(uploadPath));
 app.use(requestLogger);
 app.use(guestRateLimit);
 

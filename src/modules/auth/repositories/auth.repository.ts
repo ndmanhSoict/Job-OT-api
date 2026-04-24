@@ -76,4 +76,8 @@ export class AuthRepository {
   async revokeAllUserTokens(userId: string): Promise<void> {
     await this.tokenRepo.update({ user_id: userId }, { is_revoked: true });
   }
+
+  async updatePasswordHash(userId: string, newHash: string): Promise<void> {
+    await this.userRepo.update(userId, { password_hash: newHash });
+  }
 }
