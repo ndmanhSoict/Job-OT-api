@@ -100,6 +100,15 @@ export class UpdateIpAssetDto {
   @IsOptional()
   @IsString()
   @MaxLength(100)
+  publication_number?: string;
+
+  @IsOptional()
+  @IsDateString()
+  publication_date?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
   grant_number?: string;
 
   @IsOptional()

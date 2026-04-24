@@ -13,13 +13,14 @@ export enum AssetType {
 }
 
 export enum AssetStatus {
-  PENDING = 'pending',             // Đang thẩm định
-  PUBLISHED = 'published',         // Đã công bố
-  GRANTED = 'granted',             // Đã cấp bằng
-  REFUSED = 'refused',             // Bị từ chối
-  WITHDRAWN = 'withdrawn',         // Rút đơn
-  EXPIRED = 'expired',             // Hết hiệu lực
-  LAPSED = 'lapsed',               // Không gia hạn
+  DRAFT = 'draft',                           // Bản nháp
+  PENDING_FORMAL = 'pending_formal',         // Đang thẩm định hình thức
+  PUBLISHED = 'published',                   // Đã công bố hợp lệ
+  PENDING_SUBSTANTIVE = 'pending_substantive', // Đang thẩm định nội dung
+  GRANTED = 'granted',                       // Đã cấp bằng/GCN
+  REFUSED = 'refused',                       // Bị từ chối
+  WITHDRAWN = 'withdrawn',                   // Rút đơn
+  LAPSED = 'lapsed',                         // Hết hiệu lực
 }
 
 export enum UserRole {

@@ -8,9 +8,38 @@ import { AuditAction } from '@shared/constants/enums';
 import { buildPaginationMeta } from '@shared/helpers/pagination.helper';
 import { writeAuditLog } from '@middleware/audit-log.middleware';
 
-/** Convert ISO date string → Date object, hoặc trả undefined nếu không có giá trị */
 function toDate(value?: string): Date | undefined {
   return value ? new Date(value) : undefined;
+}
+
+/**
+ * Validate thứ tự các mốc ngày theo nghiệp vụ SHTT:
+ * publication_date >= application_date >= grant_date >= expiry_date
+ */
+function validateDateOrder(dto: {
+  application_date?: string;
+  publication_date?: string;
+  grant_date?: string;
+  expiry_date?: string;
+}): void {
+  if (dto.application_date && new Date(dto.application_date) > new Date()) {
+    throw new AppError(ErrorCode.VALIDATION_ERROR, 400, 'Ngày nộp đơn không được là ngày trong tương lai');
+  }
+  if (dto.publication_date && dto.application_date) {
+    if (new Date(dto.publication_date) < new Date(dto.application_date)) {
+      throw new AppError(ErrorCode.VALIDATION_ERROR, 400, 'Ngày công bố phải >= ngày nộp đơn');
+    }
+  }
+  if (dto.grant_date && dto.publication_date) {
+    if (new Date(dto.grant_date) < new Date(dto.publication_date)) {
+      throw new AppError(ErrorCode.VALIDATION_ERROR, 400, 'Ngày cấp bằng phải >= ngày công bố');
+    }
+  }
+  if (dto.expiry_date && dto.grant_date) {
+    if (new Date(dto.expiry_date) <= new Date(dto.grant_date)) {
+      throw new AppError(ErrorCode.VALIDATION_ERROR, 400, 'Ngày hết hạn phải > ngày cấp bằng');
+    }
+  }
 }
 
 export class IpAssetService {
@@ -28,7 +57,10 @@ export class IpAssetService {
   }
 
   async create(dto: CreateIpAssetDto, userId: string, ipAddress?: string): Promise<IpAsset> {
-    // Check duplicate application number
+    // Validate date order
+    validateDateOrder(dto);
+
+    // Kiểm tra số đơn trùng
     if (dto.application_number) {
       const existing = await this.repo.findByApplicationNumber(dto.application_number);
       if (existing) {
@@ -36,7 +68,6 @@ export class IpAssetService {
       }
     }
 
-    // Convert date strings → Date objects trước khi lưu vào DB
     const asset = await this.repo.create({
       asset_type: dto.asset_type,
       title: dto.title,
@@ -79,11 +110,28 @@ export class IpAssetService {
   ): Promise<IpAsset> {
     const before = await this.getById(id);
 
-    // Convert date strings → Date objects trước khi update
+    // Validate date order với giá trị mới, fallback về giá trị cũ nếu không thay đổi
+    validateDateOrder({
+      application_date: dto.application_date ?? before.application_date?.toISOString(),
+      publication_date: dto.publication_date ?? before.publication_date?.toISOString(),
+      grant_date: dto.grant_date ?? before.grant_date?.toISOString(),
+      expiry_date: dto.expiry_date ?? before.expiry_date?.toISOString(),
+    });
+
+    // Kiểm tra số đơn mới nếu thay đổi
+    if (dto.application_number && dto.application_number !== before.application_number) {
+      const existing = await this.repo.findByApplicationNumber(dto.application_number);
+      if (existing && existing.id !== id) {
+        throw new AppError(ErrorCode.ASSET_NUMBER_EXISTS, 409, 'Số đơn đã tồn tại trong hệ thống');
+      }
+    }
+
     const updated = await this.repo.update(id, {
       title: dto.title,
       application_number: dto.application_number,
       application_date: toDate(dto.application_date),
+      publication_number: dto.publication_number,
+      publication_date: toDate(dto.publication_date),
       grant_number: dto.grant_number,
       grant_date: toDate(dto.grant_date),
       expiry_date: toDate(dto.expiry_date),
@@ -123,8 +171,11 @@ export class IpAssetService {
     });
   }
 
+  /** Hard delete – tìm kể cả bản ghi đã soft-delete */
   async hardDelete(id: string, userId: string, ipAddress?: string): Promise<void> {
-    const asset = await this.getById(id);
+    const asset = await this.repo.findByIdIncludingDeleted(id);
+    if (!asset) throw new AppError(ErrorCode.ASSET_NOT_FOUND, 404, 'Không tìm thấy đối tượng SHTT');
+
     await this.repo.hardDelete(id);
 
     await writeAuditLog({
@@ -137,8 +188,16 @@ export class IpAssetService {
     });
   }
 
+  /** Restore – chỉ áp dụng được khi bản ghi đang ở trạng thái soft-deleted */
   async restore(id: string, userId: string, ipAddress?: string): Promise<void> {
+    const asset = await this.repo.findByIdIncludingDeleted(id);
+    if (!asset) throw new AppError(ErrorCode.ASSET_NOT_FOUND, 404, 'Không tìm thấy đối tượng SHTT');
+    if (!asset.deleted_at) {
+      throw new AppError(ErrorCode.UNPROCESSABLE_ENTITY, 422, 'Bản ghi chưa bị xóa mềm, không thể khôi phục');
+    }
+
     await this.repo.restore(id);
+
     await writeAuditLog({
       userId,
       action: AuditAction.RESTORE,

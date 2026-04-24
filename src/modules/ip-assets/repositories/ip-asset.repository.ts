@@ -16,6 +16,11 @@ export class IpAssetRepository {
     return this.repo.findOne({ where: { id } });
   }
 
+  /** Tìm kể cả bản ghi đã soft-delete – dùng cho restore và hard-delete của Admin */
+  async findByIdIncludingDeleted(id: string): Promise<IpAsset | null> {
+    return this.repo.findOne({ where: { id }, withDeleted: true });
+  }
+
   async findByApplicationNumber(applicationNumber: string): Promise<IpAsset | null> {
     return this.repo.findOne({ where: { application_number: applicationNumber } });
   }

@@ -1,0 +1,929 @@
+{
+  "info": {
+    "name": "LCMS-API – IP Assets (Section 5)",
+    "description": "Test collection for Section 5: IP ASSETS – Đối tượng SHTT (Base CRUD)\n\nEndpoints:\n- GET  /api/v1/ip-assets         (public)\n- GET  /api/v1/ip-assets/:id     (public)\n- POST /api/v1/ip-assets         (Staff+)\n- PATCH /api/v1/ip-assets/:id    (Staff+)\n- DELETE /api/v1/ip-assets/:id   (soft-delete, Staff+)\n- DELETE /api/v1/ip-assets/:id/hard (Admin)\n- POST /api/v1/ip-assets/:id/restore (Admin)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3000/api/v1" },
+    { "key": "staff_token", "value": "REPLACE_WITH_STAFF_JWT" },
+    { "key": "admin_token", "value": "REPLACE_WITH_ADMIN_JWT" },
+    { "key": "created_asset_id", "value": "" },
+    { "key": "soft_deleted_asset_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Public Endpoints (Guest)",
+      "item": [
+        {
+          "name": "GET List – no auth (guest)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response has success=true', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.be.true;",
+                  "});",
+                  "pm.test('Data is array', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.data).to.be.an('array');",
+                  "});",
+                  "pm.test('Meta contains pagination fields', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.meta).to.have.all.keys('page', 'limit', 'total', 'totalPages');",
+                  "});",
+                  "pm.test('Guest: no internal_notes in any item', () => {",
+                  "  const body = pm.response.json();",
+                  "  body.data.forEach(item => {",
+                  "    pm.expect(item).to.not.have.property('internal_notes');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ip-assets?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET List – filter by asset_type=trademark",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('All items have asset_type=trademark', () => {",
+                  "  const body = pm.response.json();",
+                  "  body.data.forEach(item => {",
+                  "    pm.expect(item.asset_type).to.equal('trademark');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ip-assets?asset_type=trademark&page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets"],
+              "query": [
+                { "key": "asset_type", "value": "trademark" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET List – filter by status=granted",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response success', () => pm.expect(pm.response.json().success).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ip-assets?status=granted",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets"],
+              "query": [
+                { "key": "status", "value": "granted" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET List – search (q param)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response success', () => pm.expect(pm.response.json().success).to.be.true);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ip-assets?q=nhãn hiệu&page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets"],
+              "query": [
+                { "key": "q", "value": "nhãn hiệu" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET List – invalid sort_by (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422 for invalid query param', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ip-assets?sort_order=INVALID",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets"],
+              "query": [
+                { "key": "sort_order", "value": "INVALID" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET by ID – no auth (guest)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response has success=true', () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test('Guest: no internal_notes', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.data).to.not.have.property('internal_notes');",
+                  "});",
+                  "pm.test('Data has required fields', () => {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data).to.have.property('id');",
+                  "  pm.expect(data).to.have.property('asset_type');",
+                  "  pm.expect(data).to.have.property('title');",
+                  "  pm.expect(data).to.have.property('status');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ip-assets/{{created_asset_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets", "{{created_asset_id}}"]
+            }
+          }
+        },
+        {
+          "name": "GET by ID – invalid UUID format (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error code VALIDATION_ERROR', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.be.false;",
+                  "  pm.expect(body.error.code).to.equal('VALIDATION_ERROR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ip-assets/not-a-uuid",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets", "not-a-uuid"]
+            }
+          }
+        },
+        {
+          "name": "GET by ID – not found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error code ASSET_NOT_FOUND', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.be.false;",
+                  "  pm.expect(body.error.code).to.equal('ASSET_NOT_FOUND');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ip-assets/00000000-0000-0000-0000-000000000000",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets", "00000000-0000-0000-0000-000000000000"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Staff Endpoints (create / update / soft-delete)",
+      "item": [
+        {
+          "name": "POST Create – success (Staff)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Response success=true', () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test('Has UUID id', () => {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.id).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);",
+                  "});",
+                  "pm.test('Asset fields match request', () => {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.asset_type).to.equal('trademark');",
+                  "  pm.expect(data.title).to.equal('Nhãn hiệu Test Postman');",
+                  "  pm.expect(data.application_number).to.equal('TM-2024-POSTMAN-001');",
+                  "});",
+                  "// Save created_asset_id for later tests",
+                  "const id = pm.response.json().data?.id;",
+                  "if (id) pm.collectionVariables.set('created_asset_id', id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asset_type\": \"trademark\",\n  \"title\": \"Nhãn hiệu Test Postman\",\n  \"application_number\": \"TM-2024-POSTMAN-001\",\n  \"application_date\": \"2023-06-15\",\n  \"publication_number\": \"PUB-2024-001\",\n  \"publication_date\": \"2023-09-01\",\n  \"grant_number\": \"GR-2024-001\",\n  \"grant_date\": \"2024-01-10\",\n  \"expiry_date\": \"2034-01-10\",\n  \"status\": \"granted\",\n  \"applicant_name\": \"Công ty TNHH Test\",\n  \"province_code\": \"BN\",\n  \"district_code\": \"BN001\",\n  \"internal_notes\": \"Ghi chú nội bộ dành cho Staff\",\n  \"meta\": { \"nice_classes\": [9, 42] }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ip-assets",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets"]
+            }
+          }
+        },
+        {
+          "name": "POST Create – unauthorized (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asset_type\": \"trademark\",\n  \"title\": \"Test không có token\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ip-assets",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets"]
+            }
+          }
+        },
+        {
+          "name": "POST Create – validation error: missing title (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error code VALIDATION_ERROR', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.be.false;",
+                  "  pm.expect(body.error.code).to.equal('VALIDATION_ERROR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asset_type\": \"trademark\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ip-assets",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets"]
+            }
+          }
+        },
+        {
+          "name": "POST Create – validation error: invalid asset_type (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error code VALIDATION_ERROR', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.be.false;",
+                  "  pm.expect(body.error.code).to.equal('VALIDATION_ERROR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asset_type\": \"invalid_type\",\n  \"title\": \"Test invalid asset_type\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ip-assets",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets"]
+            }
+          }
+        },
+        {
+          "name": "POST Create – duplicate application_number (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Error code ASSET_NUMBER_EXISTS', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.be.false;",
+                  "  pm.expect(body.error.code).to.equal('ASSET_NUMBER_EXISTS');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asset_type\": \"trademark\",\n  \"title\": \"Nhãn hiệu trùng số đơn\",\n  \"application_number\": \"TM-2024-POSTMAN-001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ip-assets",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets"]
+            }
+          }
+        },
+        {
+          "name": "POST Create – date order invalid: publication < application (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Validation error for date order', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asset_type\": \"patent\",\n  \"title\": \"Test ngày không hợp lệ\",\n  \"application_date\": \"2024-06-01\",\n  \"publication_date\": \"2024-01-01\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ip-assets",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets"]
+            }
+          }
+        },
+        {
+          "name": "POST Create – application_date in future (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error for future application_date', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asset_type\": \"patent\",\n  \"title\": \"Test ngày tương lai\",\n  \"application_date\": \"2099-01-01\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ip-assets",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets"]
+            }
+          }
+        },
+        {
+          "name": "GET by ID – Staff sees internal_notes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Staff: internal_notes is present', () => {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data).to.have.property('internal_notes');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ip-assets/{{created_asset_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets", "{{created_asset_id}}"]
+            }
+          }
+        },
+        {
+          "name": "PATCH Update – success (Staff)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response success=true', () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test('Title updated', () => {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.title).to.equal('Nhãn hiệu Test Postman (Updated)');",
+                  "});",
+                  "pm.test('Status updated', () => {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.status).to.equal('lapsed');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Nhãn hiệu Test Postman (Updated)\",\n  \"status\": \"lapsed\",\n  \"internal_notes\": \"Cập nhật ghi chú nội bộ\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ip-assets/{{created_asset_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets", "{{created_asset_id}}"]
+            }
+          }
+        },
+        {
+          "name": "PATCH Update – not found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error code ASSET_NOT_FOUND', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('ASSET_NOT_FOUND');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Không tồn tại\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ip-assets/00000000-0000-0000-0000-000000000000",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets", "00000000-0000-0000-0000-000000000000"]
+            }
+          }
+        },
+        {
+          "name": "PATCH Update – unauthorized (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Không có token\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ip-assets/{{created_asset_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets", "{{created_asset_id}}"]
+            }
+          }
+        },
+        {
+          "name": "DELETE Soft Delete – success (Staff)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));",
+                  "// Save soft_deleted_asset_id for restore/hard-delete tests",
+                  "pm.collectionVariables.set('soft_deleted_asset_id', pm.collectionVariables.get('created_asset_id'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ip-assets/{{created_asset_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets", "{{created_asset_id}}"]
+            }
+          }
+        },
+        {
+          "name": "DELETE Soft Delete – unauthorized (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ip-assets/{{created_asset_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets", "{{created_asset_id}}"]
+            }
+          }
+        },
+        {
+          "name": "GET by ID – soft-deleted → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404 after soft delete', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ip-assets/{{soft_deleted_asset_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets", "{{soft_deleted_asset_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Admin Only Endpoints (hard-delete / restore)",
+      "item": [
+        {
+          "name": "POST Restore – success (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response success=true', () => pm.expect(pm.response.json().success).to.be.true);",
+                  "pm.test('Message indicates restore', () => {",
+                  "  const data = pm.response.json().data;",
+                  "  pm.expect(data.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ip-assets/{{soft_deleted_asset_id}}/restore",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets", "{{soft_deleted_asset_id}}", "restore"]
+            }
+          }
+        },
+        {
+          "name": "POST Restore – not soft-deleted (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 422 for non-soft-deleted record', () => pm.response.to.have.status(422));",
+                  "pm.test('Error UNPROCESSABLE_ENTITY', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.success).to.be.false;",
+                  "  pm.expect(body.error.code).to.equal('UNPROCESSABLE_ENTITY');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ip-assets/{{soft_deleted_asset_id}}/restore",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets", "{{soft_deleted_asset_id}}", "restore"]
+            }
+          }
+        },
+        {
+          "name": "POST Restore – forbidden for Staff (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ip-assets/{{soft_deleted_asset_id}}/restore",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets", "{{soft_deleted_asset_id}}", "restore"]
+            }
+          }
+        },
+        {
+          "name": "POST Restore – not found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error ASSET_NOT_FOUND', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('ASSET_NOT_FOUND');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ip-assets/00000000-0000-0000-0000-000000000000/restore",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets", "00000000-0000-0000-0000-000000000000", "restore"]
+            }
+          }
+        },
+        {
+          "name": "DELETE Hard Delete – re-soft-delete first then hard-delete",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// This soft-deletes the asset first so hard-delete works on soft-deleted record",
+                  "// Run 'DELETE Soft Delete' manually before this test, or chain them"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ip-assets/{{soft_deleted_asset_id}}/hard",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets", "{{soft_deleted_asset_id}}", "hard"]
+            }
+          }
+        },
+        {
+          "name": "DELETE Hard Delete – forbidden for Staff (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ip-assets/{{soft_deleted_asset_id}}/hard",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets", "{{soft_deleted_asset_id}}", "hard"]
+            }
+          }
+        },
+        {
+          "name": "DELETE Hard Delete – not found (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error ASSET_NOT_FOUND', () => {",
+                  "  pm.expect(pm.response.json().error.code).to.equal('ASSET_NOT_FOUND');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ip-assets/00000000-0000-0000-0000-000000000000/hard",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets", "00000000-0000-0000-0000-000000000000", "hard"]
+            }
+          }
+        },
+        {
+          "name": "DELETE Hard Delete – unauthorized (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ip-assets/{{soft_deleted_asset_id}}/hard",
+              "host": ["{{base_url}}"],
+              "path": ["ip-assets", "{{soft_deleted_asset_id}}", "hard"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

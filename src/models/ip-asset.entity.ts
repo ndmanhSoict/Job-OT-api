@@ -1,4 +1,4 @@
-import { Entity, Column, Index, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, Index } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { AssetStatus, AssetType } from '@/shared/constants/enums';
 
@@ -37,7 +37,7 @@ export class IpAsset extends BaseEntity {
   @Column({ type: 'date', nullable: true, comment: 'Ngày hết hạn (tính toán tự động)' })
   expiry_date?: Date;
 
-  @Column({ type: 'enum', enum: AssetStatus, default: AssetStatus.PENDING })
+  @Column({ type: 'varchar', length: 50, default: AssetStatus.PENDING_FORMAL, comment: 'FK → ref_status' })
   status: AssetStatus;
 
   // Chủ đơn / chủ bằng (FK tới organizations hoặc persons – dùng polymorphic đơn giản)
