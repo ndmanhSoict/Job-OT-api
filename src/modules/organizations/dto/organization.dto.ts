@@ -1,4 +1,5 @@
-import { IsString, IsNotEmpty, IsOptional, MaxLength, IsEmail, IsIn } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsString, IsNotEmpty, IsOptional, MaxLength, IsEmail, IsIn, IsInt, Min, Max } from 'class-validator';
 
 const ORG_TYPES = ['company', 'cooperative', 'association', 'state_agency', 'other'] as const;
 
@@ -104,9 +105,29 @@ export class UpdateOrganizationDto {
 }
 
 export class QueryOrganizationDto {
+  @IsOptional()
+  @IsString()
   q?: string;
+
+  @IsOptional()
+  @IsIn(ORG_TYPES, { message: 'org_type không hợp lệ' })
   org_type?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
   province_code?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
   page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
   limit?: number;
 }

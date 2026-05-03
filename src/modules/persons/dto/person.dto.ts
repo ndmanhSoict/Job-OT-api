@@ -1,4 +1,5 @@
-import { IsString, IsNotEmpty, IsOptional, MaxLength, IsEmail } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsString, IsNotEmpty, IsOptional, MaxLength, IsEmail, IsInt, Min, Max } from 'class-validator';
 
 export class CreatePersonDto {
   @IsString()
@@ -94,9 +95,30 @@ export class UpdatePersonDto {
 }
 
 export class QueryPersonDto {
+  @IsOptional()
+  @IsString()
   q?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
   nationality?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
   province_code?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
   page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
   limit?: number;
 }
